@@ -376,6 +376,11 @@ export class ConvexFS {
    * This is a convenience wrapper around `transact` for the common case of
    * copying a file to a path that doesn't exist.
    *
+   * **Note:** This method is not safe against races because it doesn't allow
+   * specifying the expected version of the source file. If you need to ensure
+   * the source hasn't changed, use `transact` directly with the `source` from
+   * a prior `stat` call.
+   *
    * @param sourcePath - Path of the file to copy
    * @param destPath - Destination path (must not exist)
    * @throws If source file doesn't exist
@@ -403,6 +408,11 @@ export class ConvexFS {
    *
    * This is a convenience wrapper around `transact` for the common case of
    * moving a file to a path that doesn't exist.
+   *
+   * **Note:** This method is not safe against races because it doesn't allow
+   * specifying the expected version of the source file. If you need to ensure
+   * the source hasn't changed, use `transact` directly with the `source` from
+   * a prior `stat` call.
    *
    * @param sourcePath - Path of the file to move
    * @param destPath - Destination path (must not exist)
@@ -432,6 +442,11 @@ export class ConvexFS {
    * This is a convenience wrapper around `transact` for the common case of
    * deleting a file. This operation is idempotent - if the file doesn't exist,
    * it's a no-op.
+   *
+   * **Note:** This method is not safe against races because it doesn't allow
+   * specifying the expected version of the file. If you need to ensure the
+   * file hasn't changed, use `transact` directly with the `source` from a
+   * prior `stat` call.
    *
    * @param path - Path of the file to delete
    *
