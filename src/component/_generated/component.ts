@@ -42,6 +42,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      copyByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          destPath: string;
+          sourcePath: string;
+        },
+        null,
+        Name
+      >;
+      deleteByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          path: string;
+        },
+        null,
+        Name
+      >;
       getDownloadUrl: FunctionReference<
         "action",
         "internal",
@@ -93,6 +130,25 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             size: number;
           }>;
         },
+        Name
+      >;
+      moveByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          destPath: string;
+          sourcePath: string;
+        },
+        null,
         Name
       >;
       prepareUpload: FunctionReference<
@@ -203,6 +259,43 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      copyByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          destPath: string;
+          sourcePath: string;
+        },
+        null,
+        Name
+      >;
+      deleteByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          path: string;
+        },
+        null,
+        Name
+      >;
       list: FunctionReference<
         "query",
         "internal",
@@ -236,6 +329,25 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             size: number;
           }>;
         },
+        Name
+      >;
+      moveByPath: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          destPath: string;
+          sourcePath: string;
+        },
+        null,
         Name
       >;
       stat: FunctionReference<

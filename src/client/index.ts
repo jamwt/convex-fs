@@ -365,6 +365,87 @@ export class ConvexFS {
       ops,
     });
   }
+
+  // ============================================================================
+  // Convenience Mutations (path-based)
+  // ============================================================================
+
+  /**
+   * Copy a file to a new path.
+   *
+   * This is a convenience wrapper around `transact` for the common case of
+   * copying a file to a path that doesn't exist.
+   *
+   * @param sourcePath - Path of the file to copy
+   * @param destPath - Destination path (must not exist)
+   * @throws If source file doesn't exist
+   * @throws If destination already exists
+   *
+   * @example
+   * ```typescript
+   * await fs.copy(ctx, "/uploads/photo.jpg", "/backups/photo.jpg");
+   * ```
+   */
+  async copy(
+    ctx: MutationCtx,
+    sourcePath: string,
+    destPath: string,
+  ): Promise<void> {
+    await ctx.runMutation(this.component.lib.copyByPath, {
+      config: this.config,
+      sourcePath,
+      destPath,
+    });
+  }
+
+  /**
+   * Move a file to a new path.
+   *
+   * This is a convenience wrapper around `transact` for the common case of
+   * moving a file to a path that doesn't exist.
+   *
+   * @param sourcePath - Path of the file to move
+   * @param destPath - Destination path (must not exist)
+   * @throws If source file doesn't exist
+   * @throws If destination already exists
+   *
+   * @example
+   * ```typescript
+   * await fs.move(ctx, "/uploads/temp.txt", "/documents/final.txt");
+   * ```
+   */
+  async move(
+    ctx: MutationCtx,
+    sourcePath: string,
+    destPath: string,
+  ): Promise<void> {
+    await ctx.runMutation(this.component.lib.moveByPath, {
+      config: this.config,
+      sourcePath,
+      destPath,
+    });
+  }
+
+  /**
+   * Delete a file by path.
+   *
+   * This is a convenience wrapper around `transact` for the common case of
+   * deleting a file. This operation is idempotent - if the file doesn't exist,
+   * it's a no-op.
+   *
+   * @param path - Path of the file to delete
+   *
+   * @example
+   * ```typescript
+   * await fs.delete(ctx, "/uploads/old-file.txt");
+   * ```
+   */
+  async delete(ctx: MutationCtx, path: string): Promise<void> {
+    await ctx.runMutation(this.component.lib.deleteByPath, {
+      config: this.config,
+      path,
+    });
+  }
 }
 
 /**

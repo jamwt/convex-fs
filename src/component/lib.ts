@@ -4,7 +4,15 @@
  */
 
 // Public API from ops
-export { stat, commitFiles, transact, list } from "./ops.js";
+export {
+  stat,
+  commitFiles,
+  transact,
+  list,
+  copyByPath,
+  moveByPath,
+  deleteByPath,
+} from "./ops.js";
 
 // Public API from transfer
 export { prepareUpload, getDownloadUrl } from "./transfer.js";

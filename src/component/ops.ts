@@ -7,7 +7,7 @@ import {
   mutation,
   query,
 } from "./_generated/server.js";
-import { internal } from "./_generated/api.js";
+import { api, internal } from "./_generated/api.js";
 import { createS3BlobStore } from "./blobstore/index.js";
 import type { BlobMetadata } from "./blobstore/index.js";
 import {
@@ -522,5 +522,102 @@ export const list = query({
       continueCursor: result.continueCursor,
       isDone: result.isDone,
     };
+  },
+});
+
+/**
+ * Copy a file to a new path.
+ *
+ * This is a convenience wrapper around `transact` for the common case of
+ * copying a file to a path that doesn't exist.
+ *
+ * @throws If source file doesn't exist
+ * @throws If destination already exists
+ */
+export const copyByPath = mutation({
+  args: {
+    config: configValidator,
+    sourcePath: v.string(),
+    destPath: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const source = await ctx.runQuery(api.ops.stat, {
+      config: args.config,
+      path: args.sourcePath,
+    });
+    if (!source) {
+      throw new Error(`Source file not found: "${args.sourcePath}"`);
+    }
+
+    await ctx.runMutation(api.ops.transact, {
+      config: args.config,
+      ops: [{ op: "copy", source, dest: { path: args.destPath } }],
+    });
+    return null;
+  },
+});
+
+/**
+ * Move a file to a new path.
+ *
+ * This is a convenience wrapper around `transact` for the common case of
+ * moving a file to a path that doesn't exist.
+ *
+ * @throws If source file doesn't exist
+ * @throws If destination already exists
+ */
+export const moveByPath = mutation({
+  args: {
+    config: configValidator,
+    sourcePath: v.string(),
+    destPath: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const source = await ctx.runQuery(api.ops.stat, {
+      config: args.config,
+      path: args.sourcePath,
+    });
+    if (!source) {
+      throw new Error(`Source file not found: "${args.sourcePath}"`);
+    }
+
+    await ctx.runMutation(api.ops.transact, {
+      config: args.config,
+      ops: [{ op: "move", source, dest: { path: args.destPath } }],
+    });
+    return null;
+  },
+});
+
+/**
+ * Delete a file by path.
+ *
+ * This is a convenience wrapper around `transact` for the common case of
+ * deleting a file. This operation is idempotent - if the file doesn't exist,
+ * it's a no-op.
+ */
+export const deleteByPath = mutation({
+  args: {
+    config: configValidator,
+    path: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const source = await ctx.runQuery(api.ops.stat, {
+      config: args.config,
+      path: args.path,
+    });
+    if (!source) {
+      // Idempotent: no-op if file doesn't exist
+      return null;
+    }
+
+    await ctx.runMutation(api.ops.transact, {
+      config: args.config,
+      ops: [{ op: "delete", source }],
+    });
+    return null;
   },
 });
