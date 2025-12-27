@@ -33,6 +33,7 @@
  */
 
 import { httpActionGeneric } from "convex/server";
+import type { PaginationOptions, PaginationResult } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type {
   QueryCtx,
@@ -42,6 +43,7 @@ import type {
   ConvexFSOptions,
   HttpRouter,
 } from "./types.js";
+import type { FileMetadata } from "../component/validators.js";
 
 // Re-export types for consumers
 export type {
@@ -238,6 +240,50 @@ export class ConvexFS {
     return await ctx.runQuery(this.component.lib.stat, {
       config: this.config,
       path,
+    });
+  }
+
+  /**
+   * List files in the filesystem with pagination.
+   *
+   * Returns files sorted alphabetically by path, with optional prefix filtering
+   * and cursor-based pagination.
+   *
+   * This method is compatible with `usePaginatedQuery` from `convex-helpers/react`.
+   *
+   * @param options.prefix - Optional path prefix filter (e.g., "/uploads/")
+   * @param options.paginationOpts - Pagination options (numItems, cursor, endCursor)
+   * @returns Page of files with continuation cursor
+   *
+   * @example
+   * ```typescript
+   * // Server-side: List first page
+   * const page1 = await fs.list(ctx, {
+   *   prefix: "/uploads/",
+   *   paginationOpts: { numItems: 50, cursor: null },
+   * });
+   *
+   * // Server-side: Get next page
+   * const page2 = await fs.list(ctx, {
+   *   prefix: "/uploads/",
+   *   paginationOpts: { numItems: 50, cursor: page1.continueCursor },
+   * });
+   *
+   * // React: Use with usePaginatedQuery (in your wrapper query)
+   * // See @convex/fs/react for the usePaginatedQuery hook
+   * ```
+   */
+  async list(
+    ctx: QueryCtx,
+    options: {
+      prefix?: string;
+      paginationOpts: PaginationOptions;
+    },
+  ): Promise<PaginationResult<FileMetadata>> {
+    return await ctx.runQuery(this.component.lib.list, {
+      config: this.config,
+      prefix: options.prefix,
+      paginationOpts: options.paginationOpts,
     });
   }
 

@@ -60,6 +60,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         string,
         Name
       >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+          prefix?: string;
+        },
+        {
+          continueCursor: string;
+          isDone: boolean;
+          page: Array<{
+            blobId: string;
+            contentType: string;
+            path: string;
+            size: number;
+          }>;
+        },
+        Name
+      >;
       prepareUpload: FunctionReference<
         "action",
         "internal",
@@ -166,6 +201,41 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           files: Array<{ basis?: string; blobId: string; path: string }>;
         },
         null,
+        Name
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        {
+          config: {
+            accessKeyId: string;
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            endpoint: string;
+            region?: string;
+            secretAccessKey: string;
+            uploadUrlTtl?: number;
+          };
+          paginationOpts: {
+            cursor: string | null;
+            endCursor?: string | null;
+            id?: number;
+            maximumBytesRead?: number;
+            maximumRowsRead?: number;
+            numItems: number;
+          };
+          prefix?: string;
+        },
+        {
+          continueCursor: string;
+          isDone: boolean;
+          page: Array<{
+            blobId: string;
+            contentType: string;
+            path: string;
+            size: number;
+          }>;
+        },
         Name
       >;
       stat: FunctionReference<

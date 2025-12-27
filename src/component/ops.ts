@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import {
   action,
   internalMutation,
@@ -14,6 +15,8 @@ import {
   fileMetadataValidator,
   opValidator,
 } from "./validators.js";
+import { paginator } from "convex-helpers/server/pagination";
+import schema from "./schema.js";
 
 // Internal validator for a single file in the commit
 const fileCommitValidator = v.object({
@@ -430,5 +433,94 @@ export const transact = mutation({
     }
 
     return null;
+  },
+});
+
+/**
+ * List files in the filesystem with pagination.
+ *
+ * Returns files sorted alphabetically by path, with optional prefix filtering
+ * and cursor-based pagination.
+ *
+ * This query is compatible with `usePaginatedQuery` from `convex-helpers/react`.
+ *
+ * @example
+ * ```typescript
+ * // Server-side iteration
+ * const result = await ctx.runQuery(api.lib.list, {
+ *   config,
+ *   prefix: "/uploads/",
+ *   paginationOpts: { numItems: 50, cursor: null },
+ * });
+ *
+ * // React with usePaginatedQuery
+ * const { results, status, loadMore } = usePaginatedQuery(
+ *   api.files.list,
+ *   { prefix: "/uploads/" },
+ *   { initialNumItems: 20 },
+ * );
+ * ```
+ */
+export const list = query({
+  args: {
+    config: configValidator,
+    prefix: v.optional(v.string()),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: v.object({
+    page: v.array(fileMetadataValidator),
+    continueCursor: v.string(),
+    isDone: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const { numItems, cursor, endCursor } = args.paginationOpts;
+    const prefix = args.prefix ?? "";
+
+    // Build query with paginator for cursor-based pagination
+    const paginatedQuery = paginator(ctx.db, schema)
+      .query("files")
+      .withIndex("path", (q) => {
+        if (prefix) {
+          // Match paths starting with prefix using range query
+          return q.gte("path", prefix).lt("path", prefix + "\uffff");
+        }
+        return q;
+      })
+      .order("asc");
+
+    const result = await paginatedQuery.paginate({
+      cursor: cursor,
+      numItems: numItems,
+      endCursor: endCursor ?? undefined,
+    });
+
+    // Join with blobs table to get metadata for each file
+    const page = await Promise.all(
+      result.page.map(async (file) => {
+        const blob = await ctx.db
+          .query("blobs")
+          .withIndex("blobId", (q) => q.eq("blobId", file.blobId))
+          .unique();
+
+        if (!blob) {
+          throw new Error(
+            `Invariant violation: blob not found for blobId "${file.blobId}" (path: "${file.path}")`,
+          );
+        }
+
+        return {
+          path: file.path,
+          blobId: file.blobId,
+          contentType: blob.metadata.contentType,
+          size: blob.metadata.size,
+        };
+      }),
+    );
+
+    return {
+      page,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
   },
 });
