@@ -7,8 +7,8 @@ import {
   query,
 } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
-import { createS3BlobStore } from "./blob-vstore/index.js";
-import type { BlobMetadata } from "./blob-vstore/index.js";
+import { createS3BlobStore } from "./blobstore/index.js";
+import type { BlobMetadata } from "./blobstore/index.js";
 import {
   configValidator,
   fileMetadataValidator,

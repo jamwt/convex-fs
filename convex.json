@@ -1,5 +1,5 @@
 {
-  "functions": "src/component",
+  "functions": "example/convex",
   "codegen": {
     "legacyComponentApi": false
   },

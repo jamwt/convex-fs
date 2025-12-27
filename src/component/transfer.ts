@@ -5,7 +5,7 @@ import {
   internalQuery,
 } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
-import { createS3BlobStore } from "./blob-vstore/index.js";
+import { createS3BlobStore } from "./blobstore/index.js";
 import { configValidator } from "./validators.js";
 
 const DEFAULT_URL_TTL = 3600; // 1 hour
