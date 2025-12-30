@@ -1,11 +1,11 @@
 # ConvexFS
 
 <p align="center">
-  <img src="docs/src/assets/convexfs-logo.png" alt="ConvexFS Logo" width="200" />
+  <img src="https://convexfs.dev/_astro/convexfs-logo.BFeIv6hE_rAku0.webp" alt="ConvexFS Logo" width="200" />
 </p>
 
 <p align="center">
-  <strong>Virtual filesystem semantics for Convex, backed by Bunny.net Edge Storage & CDN</strong>
+  <strong>Virtual filesystem for Convex, backed by Bunny.net Edge Storage & CDN</strong>
 </p>
 
 ---
@@ -31,7 +31,8 @@ CDN.
 
 ## Example app
 
-The repository includes a runnable example app that allows you to curate a [photo gallery](./example).
+The repository includes a runnable example app that allows you to curate a
+[photo gallery](./example).
 
 ## Status
 

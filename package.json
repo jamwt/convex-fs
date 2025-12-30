@@ -2,9 +2,9 @@
   "name": "convex-fs",
   "description": "A fs component for Convex.",
   "repository": "github:get-convex/fs-component",
-  "homepage": "https://github.com/get-convex/fs-component#readme",
+  "homepage": "https://github.com/jamwt/convex-fs#readme",
   "bugs": {
-    "url": "https://github.com/get-convex/fs-component/issues"
+    "url": "https://github.com/jamwt/convex-fs/issues"
   },
   "version": "0.1.0",
   "license": "Apache-2.0",
