@@ -71,10 +71,20 @@ export interface BunnyStorageConfig {
 }
 
 /**
- * Storage configuration.
- * Currently only supports Bunny.net Edge Storage.
+ * In-memory test storage configuration.
+ *
+ * NOT for production use - blobs are stored in-memory and don't persist
+ * across Convex function invocations. This is only useful in convex-test.
  */
-export type StorageConfig = BunnyStorageConfig;
+export interface TestStorageConfig {
+  type: "test";
+}
+
+/**
+ * Storage configuration.
+ * Supports Bunny.net Edge Storage and in-memory test storage.
+ */
+export type StorageConfig = BunnyStorageConfig | TestStorageConfig;
 
 // =============================================================================
 // ConvexFS Options

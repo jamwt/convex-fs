@@ -31,14 +31,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           files: Array<{ basis?: null | string; blobId: string; path: string }>;
         },
@@ -52,14 +54,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           destPath: string;
           sourcePath: string;
@@ -74,14 +78,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           path: string;
         },
@@ -96,14 +102,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
         },
         string,
@@ -116,14 +124,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           paginationOpts: {
             cursor: string | null;
@@ -154,14 +164,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           destPath: string;
           sourcePath: string;
@@ -176,14 +188,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           path: string;
         },
@@ -202,14 +216,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           ops: Array<
             | {
@@ -253,14 +269,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           contentType: string;
           data: ArrayBuffer;
@@ -277,14 +295,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           files: Array<{ basis?: null | string; blobId: string; path: string }>;
         },
@@ -298,14 +318,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           destPath: string;
           sourcePath: string;
@@ -320,14 +342,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           path: string;
         },
@@ -341,14 +365,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           paginationOpts: {
             cursor: string | null;
@@ -379,14 +405,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           destPath: string;
           sourcePath: string;
@@ -401,14 +429,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           path: string;
         },
@@ -427,14 +457,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           ops: Array<
             | {
@@ -481,14 +513,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
         },
         string,
@@ -501,14 +535,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           config: {
             blobGracePeriod?: number;
             downloadUrlTtl?: number;
-            storage: {
-              apiKey: string;
-              cdnHostname: string;
-              region?: string;
-              storageZoneName: string;
-              tokenKey?: string;
-              type: "bunny";
-            };
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
           };
           contentType: string;
           data: ArrayBuffer;

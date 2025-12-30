@@ -16,10 +16,26 @@ export const bunnyStorageConfigValidator = v.object({
 export type BunnyStorageConfig = Infer<typeof bunnyStorageConfigValidator>;
 
 /**
- * Storage backend configuration validator.
- * Currently only supports Bunny.net Edge Storage.
+ * Validator for in-memory test storage configuration.
+ *
+ * NOT for production use - blobs are stored in-memory and don't persist
+ * across Convex function invocations. This is only useful in convex-test.
  */
-export const storageConfigValidator = bunnyStorageConfigValidator;
+export const testStorageConfigValidator = v.object({
+  type: v.literal("test"),
+});
+
+/** TypeScript type for test storage config. */
+export type TestStorageConfig = Infer<typeof testStorageConfigValidator>;
+
+/**
+ * Storage backend configuration validator.
+ * Supports Bunny.net Edge Storage and in-memory test storage.
+ */
+export const storageConfigValidator = v.union(
+  bunnyStorageConfigValidator,
+  testStorageConfigValidator,
+);
 
 /** TypeScript type for storage config. */
 export type StorageConfig = Infer<typeof storageConfigValidator>;

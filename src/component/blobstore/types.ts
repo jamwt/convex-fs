@@ -1,4 +1,16 @@
 /**
+ * Configuration for the in-memory test blob store.
+ *
+ * NOT for production use - blobs are stored in-memory and don't persist
+ * across Convex function invocations. This is only useful in convex-test
+ * where everything runs in a single process.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface TestBlobStoreConfig {
+  // No configuration needed - just a marker type
+}
+
+/**
  * Configuration for creating a Bunny.net Edge Storage blob store.
  */
 export interface BunnyBlobStoreConfig {

@@ -276,14 +276,12 @@ export const transact = mutation({
         .unique();
 
       if (!sourceFile) {
-        throw new Error(
-          `Source conflict at "${op.source.path}": expected blobId "${op.source.blobId}", found null`,
-        );
+        throw new Error(`Source file not found: "${op.source.path}"`);
       }
 
       if (sourceFile.blobId !== op.source.blobId) {
         throw new Error(
-          `Source conflict at "${op.source.path}": expected blobId "${op.source.blobId}", found "${sourceFile.blobId}"`,
+          `Source file changed: "${op.source.path}" expected blobId "${op.source.blobId}", found "${sourceFile.blobId}"`,
         );
       }
 
