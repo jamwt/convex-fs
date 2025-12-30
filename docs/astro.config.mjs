@@ -7,6 +7,7 @@ import starlightVideos from "starlight-videos";
 export default defineConfig({
   integrations: [
     starlight({
+		favicon: "/favicon.ico",
       plugins: [starlightVideos()],
       title: "ConvexFS",
       logo: {

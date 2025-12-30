@@ -103,6 +103,36 @@ function FileUpload() {
 export default FileUpload;
 ```
 
+<Aside type="caution">
+  The current maximum file size is 15MB per upload, limited by the Convex HTTP
+  action environment. This limit may be raised in the future as Convex increases
+  its limits.
+</Aside>
+
+## Path conventions
+
+Any UTF-8 string is a valid path in ConvexFS. You may choose to separate
+namespaces with slashes and use a leading slash (e.g., `/users/123/avatar.jpg`),
+but ConvexFS does not treat any character as special.
+
+This means:
+
+- Spaces are valid: `/my documents/report.pdf`
+- Unicode is valid: `/用户/文档.txt`
+- No character escaping is required
+
+If you need to ensure path safety for operating systems, URL safety for web
+contexts, or any other constraints, that is up to your application functions and
+whatever conventions are appropriate for your domain.
+
+Note that the [`list()` function's](/guides/filesystem-operations#listing-files)
+`prefix` parameter performs a simple string prefix match—it is not a directory
+listing. For example, `prefix: "/users"` (without trailing slash) will match
+both `/users/alice.txt` and `/users-backup/data.bin`. With `prefix: "/users/"`
+(trailing slash), paths like `/users/alice.txt` or `/users/nested/deep/file.txt`
+would match—not just direct children, but any path starting with that exact
+prefix.
+
 ## What's next
 
 Now that you've uploaded a file, let's [serve it](/guides/serving-files)!
