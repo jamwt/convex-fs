@@ -2,23 +2,23 @@
 title: 3. Getting the example app running
 description: Getting the example app running
 ---
+
 import { VideoPlayer } from "starlight-videos/components";
 
 ## Example
 
-The best way to test your bunny.net integration is ready and to learn how to
-integrate ConvexFS into your own app is by getting the example app running
-first.
+The best way to test your bunny.net integration and to learn the ConvexFS basics
+is by getting the example app working.
 
-## Clone the repo
+## Clone the repo ConvexFS project repo.
 
-If you haven't already, clone the `convex-fs` repo:
+If you haven't already, use `git` to clone the repo on your machine:
 
 ```bash
 $ git clone https://github.com/jamwt/convex-fs
 ```
 
-## Get the app install and running
+## Get the app installed and running
 
 Launch the app in the normal Convex way:
 
@@ -27,11 +27,11 @@ $ npm i
 $ npm run dev
 ```
 
-The `run dev` command will run both the frontend, and the `npx convex dev`
+The `run dev` command will run both the vite frontend and the `npx convex dev`
 command in the background.
 
-This command will make sure you're logged in, help you set up a new Convex
-project, etc.
+As usual, `npx convex dev` will make sure you're logged in, help you set up a new Convex
+project, and deploy the project to a development environment.
 
 ## Set the bunny.net environment variables.
 
@@ -39,14 +39,14 @@ Your app is running, but it doesn't work—yet! We need to introduce those
 variables and keys from [the bunny.net setup](/get-started/setup-bunny) into our
 Convex backend.
 
-If your Convex project dashboard isn't already loaded, you can pop it up at any
-time from the CLI in your project root:
+If your Convex project dashboard isn't already loaded in your browser, you can pop it up at any
+time from the terminal in your project root by running:
 
 ```bash
 $ npx convex dashboard
 ```
 
-Then, click **Settings** in the left nav, and choose **Environment Variables**.
+Then, in the dashboard, click **Settings** in the left nav, and choose **Environment Variables**.
 Finally, set those four variables from the CDN setup using the management UI:
 
 ![dashboard env vars](./bunny-convex-dashboard.png)

@@ -3,4 +3,11 @@ title: Filesystem operations
 description: How to list, move, copy, and delete files in ConvexFS.
 ---
 
-Coming soon.
+- list
+- stat
+- getPath
+- put
+- transact
+- move
+- copy
+- delete

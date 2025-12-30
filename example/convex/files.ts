@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { action, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { fs } from "./fs";
 
@@ -7,7 +7,7 @@ import { fs } from "./fs";
  * Commit an uploaded image to the filesystem.
  * Validates that the content type is an image.
  */
-export const commitImage = action({
+export const commitImage = mutation({
   args: {
     blobId: v.string(),
     filename: v.string(),

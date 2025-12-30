@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "convex-helpers/react";
 import { api } from "../convex/_generated/api";
 import {
@@ -53,7 +53,7 @@ function App() {
   const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const commitImage = useAction(api.files.commitImage);
+  const commitImage = useMutation(api.files.commitImage);
   const moveFile = useMutation(api.files.moveFile);
   const copyFile = useMutation(api.files.copyFile);
   const deleteFile = useMutation(api.files.deleteFile);

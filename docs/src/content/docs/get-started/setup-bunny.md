@@ -4,19 +4,17 @@ description: Setting up your bunny.net Storage and CDN
 ---
 
 [bunny.net](https://bunny.net) is a high quality, cost-efficient provider of
-global storage and CDN services. It's an excellent fit for providing your Convex
-app with storage and content delivery.
+global storage and CDN services. While it does not offer a free tier, it has a
+generous trial period and very affordable pay-as-you-go pricing plans for
+projects on a lean budget.
 
-It does not offer a free tier, but it has a generous trial and very affordable
-pay-as-you-go pricing plans for projects on a lean budget.
-
-Setting up and managing your storage zones and CDN "pull zones" is a piece of
-cake. You should be up and running in less than ten minutes.
+Setting up bunny.net for ConvexFS is a piece of cake. You should be up and
+running in less than ten minutes.
 
 ## Create an account at bunny.net
 
 If you don't already have an account, head over to
-[bunny.net](https://bunny.net) and create one.
+[bunny.net](https://bunny.net) and create one for free.
 
 ## Create your storage zone
 
@@ -29,8 +27,11 @@ If you don't already have an account, head over to
     3. Pick a main region. If you picked **Edge(SSD)**, then **Frankfurt (DE)**
        is the mandatory choice.
     4. Choose replication regions for your data. The defaults get your data
-       replicated pretty broadly around the world, and the CDN can do the rest.
-    5. Click the **Add Storage Zone** button.
+       replicated pretty broadly around the world, and the CDN can do the
+       rest. 5. Click the **Add Storage Zone** button.
+
+_If you want to run a tighter budget, using **Standard** storage and/or fewer
+regions may have a serious impact on your storage bill._
 
 ## Connect a CDN pull zone
 
@@ -49,7 +50,7 @@ If you don't already have an account, head over to
        performance to your users worldwide.
     1. Click the **Add Pull Zone** button to create the zone.
 
-## Update some pull zone settings
+## Update pull zone security settings
 
 1.  On the default **Hostnames** view for this pull zone, enable **Force SSL**.
 1.  Now, on the zone navigation menu, click **Security** and then **Token
@@ -93,9 +94,10 @@ The last value we'll need to create. It's the API key Convex will use to upload
 blobs into your storage zone.
 
 1.  Head back over to your storage zone management page. (Click **Storage** in
-    main left nav, then choose click on the name of your storage zone.)
+    main left nav, then click on the name of your storage zone.)
 1.  Click **FTP & API access** from the storage zone management menu.
-1.  View & Copy out the **Password** value (not **Read-only password**):
+1.  View & Copy out the **Password** value (not **Read-only password**). This is
+    your API key:
 
 ![API Key](./bunny-api-key.png)
 

@@ -107,8 +107,7 @@ export class ConvexFS {
   /**
    * Commit uploaded blobs to file paths.
    *
-   * This verifies the blobs exist in object storage and atomically
-   * creates/updates the file records.
+   * This atomically creates/updates file records for previously uploaded blobs.
    *
    * @param files - Array of file commits with path, blobId, and optional basis for CAS
    *
@@ -136,10 +135,10 @@ export class ConvexFS {
    * ```
    */
   async commitFiles(
-    ctx: ActionCtx,
+    ctx: MutationCtx,
     files: Array<{ path: string; blobId: string; basis?: string | null }>,
   ): Promise<void> {
-    await ctx.runAction(this.component.lib.commitFiles, {
+    await ctx.runMutation(this.component.lib.commitFiles, {
       config: this.config,
       files,
     });

@@ -1,0 +1,137 @@
+---
+title: Integrating ConvexFS into an existing app
+description: Integrating ConvexFS into an existing app
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="tip">
+  This guide assumes you've already followed the [getting
+  started](/get-started/introduction) guide and have a working bunny.net setup.
+  (Or you're just a seasoned expert at this stuff!)
+</Aside>
+
+## 1. Install the component
+
+ConvexFS is a standard [Convex component](https://convex.dev/components), and so
+is set up in the usual way.
+
+First, install the component package.
+
+```bash
+$ npm i @convex/fs
+```
+
+Then, add it the component to your app by registering the component in your
+`convex.config.ts` file, like so:
+
+```tsx
+import { defineApp } from "convex/server";
+import fs from "@convex/fs/convex.config.js";
+
+const app = defineApp();
+app.use(fs);
+
+export default app;
+```
+
+If this is your project's first component, you may not have a `convex.config.ts`
+file yet. No problem—simply create a new file in `convex/convex.config.ts` with
+the above contents.
+
+If you already have this file, you only need to import `fs` and add one more
+`app.use` invocation to mount this component.
+
+## 2. Create the ConvexFS object.
+
+In a TypeScript file in your project's `convex/` directory you'll want to create
+an instance of the `ConvexFS` class. (We recommend naming this file `fs.ts`):
+
+```tsx
+import { ConvexFS } from "@convex/fs";
+import { components } from "./_generated/api";
+
+// Using Bunny.net Edge Storage with token-authenticated Pull Zone
+export const fs = new ConvexFS(components.fs, {
+  storage: {
+    type: "bunny",
+    apiKey: process.env.BUNNY_API_KEY!,
+    storageZoneName: process.env.BUNNY_STORAGE_ZONE!,
+    region: process.env.BUNNY_REGION,
+    cdnHostname: process.env.BUNNY_CDN_HOSTNAME!, // e.g., "myzone.b-cdn.net"
+    tokenKey: process.env.BUNNY_TOKEN_KEY,
+  },
+});
+```
+
+This exported `fs` object—an instance of the `ConvexFS` class—will be the way
+your application interacts with ConvexFS from here on out.
+
+## 3. Setup the Convex environment
+
+Just as we did
+[during the tutorial](/get-started/setup-bunny#gathering-environment-variables-and-api-keys),
+populate your Convex project's environment with the variables the above ConvexFS
+constructor is referencing.
+
+<Aside type="caution">
+  If your primary region is not the default of Frankfurt (only possible if
+  you're using standard HDD-based storage), make sure to set `BUNNY_REGION` as
+  well.
+</Aside>
+
+## 4. Register HTTP Actions for blob upload/download
+
+If you don't already have an `http.ts` file for registering
+[HTTP Actions](https://docs.convex.dev/functions/http-actions), you'll want to
+create one now. Pick a path prefix you'd like to mount the filesystems HTTP
+routes for file data transfer, such as `/fs/`.
+
+Then, put the following into `convex/http.ts`:
+
+```tsx
+import { httpRouter } from "convex/server";
+import { registerRoutes } from "@convex/fs";
+import { components } from "./_generated/api";
+import { fs } from "./fs";
+
+const http = httpRouter();
+
+/* Possibly...
+you have other routes here */
+
+// Mount ConvexFS routes at /fs:
+// - POST /fs/upload - Upload proxy for Bunny.net storage
+// - GET /fs/blobs/{blobId} - Returns 302 redirect to signed CDN URL
+registerRoutes(http, components.fs, fs, {
+  pathPrefix: "/fs",
+  uploadAuth: async () => {
+    // TODO: Add real auth check
+    return true;
+  },
+  downloadAuth: async () => {
+    // TODO: Add real auth check
+    return true;
+  },
+});
+
+/* Possibly...
+you have other routes here */
+
+export default http;
+```
+
+This delegates the http paths at `/fs/*` to this instance of ConvexFS.
+
+<Aside type="danger">
+  We've populated the authentication handlers with stubs that always allow upload
+  and download for now. We'll go much deeper into this subject in
+  [later](/guides/authn-authz).
+
+  **Make sure to fix this before deploying your app to production!**
+</Aside>
+
+## What's next
+
+The component is installed and ready to go! So first, let's dive into how to
+[upload files](/guides/uploading-files).

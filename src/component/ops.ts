@@ -152,7 +152,7 @@ export const commitFilesInternal = internalMutation({
   },
 });
 
-export const commitFiles = action({
+export const commitFiles = mutation({
   args: {
     config: configValidator,
     files: v.array(fileCommitValidator),
@@ -166,26 +166,23 @@ export const commitFiles = action({
     }
 
     // Get metadata from uploads table (populated during proxy upload)
-    const blobIds = files.map((f) => f.blobId);
-    const uploadRecords = await ctx.runQuery(
-      internal.transfer.getUploadsByBlobIds,
-      { blobIds },
-    );
-
-    // Build map of metadata from uploads table
     const metadataMap = new Map<
       string,
       { contentType: string; size: number }
     >();
-    for (const record of uploadRecords) {
+    for (const file of files) {
+      const upload = await ctx.db
+        .query("uploads")
+        .withIndex("blobId", (q) => q.eq("blobId", file.blobId))
+        .unique();
       if (
-        record &&
-        record.contentType !== undefined &&
-        record.size !== undefined
+        upload &&
+        upload.contentType !== undefined &&
+        upload.size !== undefined
       ) {
-        metadataMap.set(record.blobId, {
-          contentType: record.contentType,
-          size: record.size,
+        metadataMap.set(file.blobId, {
+          contentType: upload.contentType,
+          size: upload.size,
         });
       }
     }
@@ -200,24 +197,80 @@ export const commitFiles = action({
       );
     }
 
-    // Prepare files with metadata for the internal mutation
-    const filesWithMetadata = files.map((file) => {
+    // Verify CAS conditions
+    for (const file of files) {
+      if (file.basis !== undefined) {
+        const currentFile = await ctx.db
+          .query("files")
+          .withIndex("path", (q) => q.eq("path", file.path))
+          .unique();
+        const currentBlobId = currentFile?.blobId ?? null;
+
+        if (currentBlobId !== file.basis) {
+          throw new Error(
+            `CAS conflict for path "${file.path}": expected basis "${file.basis}", found "${currentBlobId}"`,
+          );
+        }
+      }
+    }
+
+    // All checks passed, commit the files
+    const now = Date.now();
+
+    for (const file of files) {
       const metadata = metadataMap.get(file.blobId)!;
-      return {
-        path: file.path,
+
+      // 1. Insert into blobs table with refCount=1
+      await ctx.db.insert("blobs", {
         blobId: file.blobId,
-        basis: file.basis,
         metadata: {
           contentType: metadata.contentType,
           size: metadata.size,
         },
-      };
-    });
+        refCount: 1,
+        updatedAt: now,
+      });
 
-    // 4. Commit atomically via internal mutation (handles CAS check)
-    await ctx.runMutation(internal.ops.commitFilesInternal, {
-      files: filesWithMetadata,
-    });
+      // 2. Update or insert into files table
+      const existingFile = await ctx.db
+        .query("files")
+        .withIndex("path", (q) => q.eq("path", file.path))
+        .unique();
+
+      if (existingFile) {
+        // Update existing file to point to new blob
+        await ctx.db.patch(existingFile._id, {
+          blobId: file.blobId,
+        });
+
+        // Decrement refCount on old blob (GC will clean up if it hits 0)
+        const oldBlob = await ctx.db
+          .query("blobs")
+          .withIndex("blobId", (q) => q.eq("blobId", existingFile.blobId))
+          .unique();
+        if (oldBlob) {
+          await ctx.db.patch(oldBlob._id, {
+            refCount: oldBlob.refCount - 1,
+            updatedAt: now,
+          });
+        }
+      } else {
+        // Insert new file
+        await ctx.db.insert("files", {
+          path: file.path,
+          blobId: file.blobId,
+        });
+      }
+
+      // 3. Delete from uploads table
+      const upload = await ctx.db
+        .query("uploads")
+        .withIndex("blobId", (q) => q.eq("blobId", file.blobId))
+        .unique();
+      if (upload) {
+        await ctx.db.delete(upload._id);
+      }
+    }
 
     return null;
   },

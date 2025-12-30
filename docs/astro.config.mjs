@@ -9,6 +9,11 @@ export default defineConfig({
     starlight({
       plugins: [starlightVideos()],
       title: "ConvexFS",
+      logo: {
+        src: "./src/assets/convexfs-logo.png",
+        alt: "ConvexFS",
+      },
+      customCss: ["./src/styles/custom.css"],
       social: [
         {
           icon: "github",
@@ -36,6 +41,10 @@ export default defineConfig({
             {
               label: "Filesystem operations",
               slug: "guides/filesystem-operations",
+            },
+            {
+              label: "Transactions & atomicity",
+              slug: "guides/transactions-atomicity",
             },
             { label: "Authn & authz", slug: "guides/authn-authz" },
             {

@@ -1,0 +1,8 @@
+/* Custom header logo spacing */
+.site-title {
+  gap: 0.5rem; /* Gap between logo and title text */
+}
+
+.site-title img {
+  margin-left: 0.5rem; /* Add padding to the left of the logo */
+}

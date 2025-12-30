@@ -25,7 +25,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
     lib: {
       commitFiles: FunctionReference<
-        "action",
+        "mutation",
         "internal",
         {
           config: {
@@ -335,7 +335,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
     };
     ops: {
       commitFiles: FunctionReference<
-        "action",
+        "mutation",
         "internal",
         {
           config: {
