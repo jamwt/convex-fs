@@ -4,20 +4,6 @@ import { paginationOptsValidator } from "convex/server";
 import { fs } from "./fs";
 
 /**
- * Get a presigned upload URL for uploading a new image.
- */
-export const prepareUpload = action({
-  args: {},
-  returns: v.object({
-    url: v.string(),
-    blobId: v.string(),
-  }),
-  handler: async (ctx) => {
-    return await fs.prepareUpload(ctx);
-  },
-});
-
-/**
  * Commit an uploaded image to the filesystem.
  * Validates that the content type is an image.
  */

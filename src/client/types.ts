@@ -46,21 +46,6 @@ export type AuthCallback = (
 // =============================================================================
 
 /**
- * S3-compatible storage configuration.
- */
-export interface S3StorageConfig {
-  type: "s3";
-  /** AWS access key ID or equivalent for S3-compatible services */
-  accessKeyId: string;
-  /** AWS secret access key or equivalent for S3-compatible services */
-  secretAccessKey: string;
-  /** Base URL including bucket path */
-  endpoint: string;
-  /** AWS region. Defaults to "auto" */
-  region?: string;
-}
-
-/**
  * Bunny.net Edge Storage configuration.
  */
 export interface BunnyStorageConfig {
@@ -78,9 +63,10 @@ export interface BunnyStorageConfig {
 }
 
 /**
- * Storage configuration - discriminated union of S3 and Bunny.
+ * Storage configuration.
+ * Currently only supports Bunny.net Edge Storage.
  */
-export type StorageConfig = S3StorageConfig | BunnyStorageConfig;
+export type StorageConfig = BunnyStorageConfig;
 
 // =============================================================================
 // ConvexFS Options

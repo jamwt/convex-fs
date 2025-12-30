@@ -1,20 +1,6 @@
 import { v, type Infer } from "convex/values";
 
 /**
- * Validator for S3-compatible storage configuration.
- */
-export const s3StorageConfigValidator = v.object({
-  type: v.literal("s3"),
-  accessKeyId: v.string(),
-  secretAccessKey: v.string(),
-  endpoint: v.string(),
-  region: v.optional(v.string()),
-});
-
-/** TypeScript type for S3 storage config. */
-export type S3StorageConfig = Infer<typeof s3StorageConfigValidator>;
-
-/**
  * Validator for Bunny.net Edge Storage configuration.
  */
 export const bunnyStorageConfigValidator = v.object({
@@ -30,14 +16,12 @@ export const bunnyStorageConfigValidator = v.object({
 export type BunnyStorageConfig = Infer<typeof bunnyStorageConfigValidator>;
 
 /**
- * Discriminated union validator for storage backend configuration.
+ * Storage backend configuration validator.
+ * Currently only supports Bunny.net Edge Storage.
  */
-export const storageConfigValidator = v.union(
-  s3StorageConfigValidator,
-  bunnyStorageConfigValidator,
-);
+export const storageConfigValidator = bunnyStorageConfigValidator;
 
-/** TypeScript type for storage config (union of S3 and Bunny). */
+/** TypeScript type for storage config. */
 export type StorageConfig = Infer<typeof storageConfigValidator>;
 
 /**

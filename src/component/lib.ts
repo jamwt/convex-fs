@@ -15,7 +15,7 @@ export {
 } from "./ops.js";
 
 // Public API from transfer
-export { prepareUpload, getDownloadUrl, uploadBlob } from "./transfer.js";
+export { getDownloadUrl, uploadBlob } from "./transfer.js";
 
 // Public validators and types
 export {

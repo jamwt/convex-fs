@@ -67,7 +67,7 @@ export const ensureConfigStored = internalMutation({
   args: { config: configValidator },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Use "storage" as the key for config (was "s3" before, now generic)
+    // Use "storage" as the key for config
     const existing = await ctx.db
       .query("config")
       .withIndex("key", (q) => q.eq("key", "storage"))
@@ -95,8 +95,11 @@ export const ensureConfigStored = internalMutation({
       }
       // Only update if there are actual changes (deep equal, ignoring undefined fields in newValue)
       if (existing.checksum !== newChecksum) {
-        await ctx.db.patch(existing._id, { value: newValue, checksum: newChecksum });
-      } 
+        await ctx.db.patch(existing._id, {
+          value: newValue,
+          checksum: newChecksum,
+        });
+      }
     }
 
     return null;

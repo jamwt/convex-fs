@@ -7,10 +7,9 @@ export default defineSchema({
   uploads: defineTable({
     // UUID for the blob in object storage
     blobId: v.string(),
-    // Unix timestamp (ms) when the presigned upload URL expires
+    // Unix timestamp (ms) when the upload expires (for GC)
     expiresAt: v.number(),
-    // Optional metadata for proxy uploads (known at upload time)
-    // For S3 presigned URL uploads, these are not set - we call head() at commit time
+    // Metadata from proxy upload
     contentType: v.optional(v.string()),
     size: v.optional(v.number()),
   })
@@ -36,20 +35,11 @@ export default defineSchema({
     path: v.string(),
   }).index("path", ["path"]),
 
-  // Cached presigned download URLs
-  blobDownloadUrls: defineTable({
-    blobId: v.string(),
-    url: v.string(),
-    expiresAt: v.number(),
-  })
-    .index("blobId", ["blobId"])
-    .index("expiresAt", ["expiresAt"]), // For DGC queries
-
   // Stored config for background jobs (components can't access env vars)
   config: defineTable({
     key: v.string(),
     value: v.object({
-      // Storage backend configuration (S3 or Bunny)
+      // Storage backend configuration
       storage: storageConfigValidator,
       // Presigned URL TTL configuration (in seconds)
       uploadUrlTtl: v.optional(v.number()),

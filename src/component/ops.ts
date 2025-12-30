@@ -10,7 +10,7 @@ import {
 } from "./_generated/server.js";
 import { api, internal } from "./_generated/api.js";
 import { createBlobStore } from "./blobstore/index.js";
-import type { BlobMetadata } from "./blobstore/index.js";
+
 import {
   configValidator,
   fileMetadataValidator,
@@ -26,7 +26,7 @@ const fileCommitValidator = v.object({
   basis: v.optional(v.string()), // Expected current blobId for CAS semantics
 });
 
-// Internal validator for S3 metadata passed to commitFilesInternal
+// Internal validator for blob metadata passed to commitFilesInternal
 const blobMetadataValidator = v.object({
   contentType: v.string(),
   size: v.number(),
@@ -189,7 +189,7 @@ export const commitFiles = action({
       }
     }
 
-    // 2. For blobs without cached metadata, fetch from storage (S3 presigned URL flow)
+    // 2. For blobs without cached metadata, fetch from storage
     const blobsNeedingHead = files.filter(
       (f) => !cachedMetadataMap.has(f.blobId),
     );

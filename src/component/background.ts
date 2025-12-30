@@ -3,7 +3,6 @@
  *
  * - UGC: GC for expired/abandoned uploads (runs at :00)
  * - BGC: GC for orphaned blobs with refCount=0 (runs at :20)
- * - Cleanup for expired download URL cache entries (runs at :40, to be implemented)
  */
 
 import { v } from "convex/values";
@@ -80,11 +79,11 @@ export const deleteUploadRecords = internalMutation({
 /**
  * GC expired uploads.
  *
- * Finds uploads where the presigned URL has expired (plus grace period),
- * deletes the blobs from S3, and removes the upload records.
+ * Finds uploads where the upload has expired (plus grace period),
+ * deletes the blobs from storage, and removes the upload records.
  *
- * Only self-schedules if batch was full AND no S3 errors occurred
- * (to avoid hammering S3 during outages).
+ * Only self-schedules if batch was full AND no storage errors occurred
+ * (to avoid hammering storage during outages).
  */
 export const gcExpiredUploads = internalAction({
   args: {},
@@ -108,7 +107,7 @@ export const gcExpiredUploads = internalAction({
       return null;
     }
 
-    // 2. Find expired uploads (URL expired + grace period)
+    // 2. Find expired uploads (expired + grace period)
     const threshold = Date.now() - UPLOAD_GRACE_PERIOD_MS;
     const expired = await ctx.runQuery(internal.background.findExpiredUploads, {
       threshold,
@@ -131,13 +130,13 @@ export const gcExpiredUploads = internalAction({
           const result = await store.delete(upload.blobId);
           if (result.status === "not_found") {
             console.log(
-              `[UGC] Blob ${upload.blobId} never made it to S3 (upload abandoned)`,
+              `[UGC] Blob ${upload.blobId} not found in storage (upload abandoned)`,
             );
           }
           return { status: result.status, upload };
         } catch (error) {
           console.log(
-            `[UGC] Failed to delete blob ${upload.blobId} from S3: ${error}`,
+            `[UGC] Failed to delete blob ${upload.blobId} from storage: ${error}`,
           );
           return { status: "error" as const, upload };
         }
@@ -155,10 +154,10 @@ export const gcExpiredUploads = internalAction({
     const errorCount = results.filter((r) => r.status === "error").length;
 
     console.log(
-      `[UGC] Deleted ${deletedCount} from S3, ${notFoundCount} never made it to S3, ${errorCount} S3 errors`,
+      `[UGC] Deleted ${deletedCount} from storage, ${notFoundCount} not found, ${errorCount} errors`,
     );
 
-    // 4. Delete upload records only for successful S3 deletes (or not_found)
+    // 4. Delete upload records only for successful deletes (or not_found)
     if (okToDelete.length > 0) {
       await ctx.runMutation(internal.background.deleteUploadRecords, {
         ids: okToDelete.map((u) => u._id),
@@ -168,8 +167,8 @@ export const gcExpiredUploads = internalAction({
       );
     }
 
-    // 5. Only self-schedule if batch was full AND no S3 errors
-    //    (to avoid hammering S3 during outages)
+    // 5. Only self-schedule if batch was full AND no storage errors
+    //    (to avoid hammering storage during outages)
     if (expired.length === GC_BATCH_SIZE && errorCount === 0) {
       console.log("[UGC] Batch full, scheduling follow-up run");
       await ctx.scheduler.runAfter(0, internal.background.gcExpiredUploads, {});
@@ -230,10 +229,10 @@ export const deleteBlobRecords = internalMutation({
  * GC orphaned blobs.
  *
  * Finds blobs with refCount=0 that have been orphaned for longer than
- * the grace period, deletes them from S3, and removes the blob records.
+ * the grace period, deletes them from storage, and removes the blob records.
  *
- * Only self-schedules if batch was full AND no S3 errors occurred
- * (to avoid hammering S3 during outages).
+ * Only self-schedules if batch was full AND no storage errors occurred
+ * (to avoid hammering storage during outages).
  */
 export const gcOrphanedBlobs = internalAction({
   args: {},
@@ -282,13 +281,15 @@ export const gcOrphanedBlobs = internalAction({
         try {
           const result = await store.delete(blob.blobId);
           if (result.status === "not_found") {
-            // Blob already gone from S3 - still clean up DB record
-            console.log(`[BGC] Blob ${blob.blobId} already deleted from S3`);
+            // Blob already gone from storage - still clean up DB record
+            console.log(
+              `[BGC] Blob ${blob.blobId} already deleted from storage`,
+            );
           }
           return { status: result.status, blob };
         } catch (error) {
           console.log(
-            `[BGC] Failed to delete blob ${blob.blobId} from S3: ${error}`,
+            `[BGC] Failed to delete blob ${blob.blobId} from storage: ${error}`,
           );
           return { status: "error" as const, blob };
         }
@@ -306,10 +307,10 @@ export const gcOrphanedBlobs = internalAction({
     const errorCount = results.filter((r) => r.status === "error").length;
 
     console.log(
-      `[BGC] Deleted ${deletedCount} from S3, ${notFoundCount} already gone, ${errorCount} S3 errors`,
+      `[BGC] Deleted ${deletedCount} from storage, ${notFoundCount} already gone, ${errorCount} errors`,
     );
 
-    // 5. Delete blob records only for successful S3 deletes (or not_found)
+    // 5. Delete blob records only for successful deletes (or not_found)
     if (okToDelete.length > 0) {
       await ctx.runMutation(internal.background.deleteBlobRecords, {
         ids: okToDelete.map((b) => b._id),
@@ -319,76 +320,11 @@ export const gcOrphanedBlobs = internalAction({
       );
     }
 
-    // 6. Only self-schedule if batch was full AND no S3 errors
-    //    (to avoid hammering S3 during outages)
+    // 6. Only self-schedule if batch was full AND no storage errors
+    //    (to avoid hammering storage during outages)
     if (orphaned.length === GC_BATCH_SIZE && errorCount === 0) {
       console.log("[BGC] Batch full, scheduling follow-up run");
       await ctx.scheduler.runAfter(0, internal.background.gcOrphanedBlobs, {});
-    }
-
-    return null;
-  },
-});
-
-// =============================================================================
-// DGC: Download URL Cache Garbage Collection
-// =============================================================================
-
-/**
- * GC expired download URL cache entries.
- *
- * Cleans up cached presigned download URLs that have expired.
- * This is purely a DB cleanup - no S3 interaction needed.
- *
- * Self-schedules if batch was full to run to completion.
- */
-export const gcExpiredDownloadUrls = internalMutation({
-  args: {},
-  returns: v.null(),
-  handler: async (ctx): Promise<null> => {
-    // Check if GC is frozen (emergency stop)
-    const configDoc = await ctx.db
-      .query("config")
-      .withIndex("key", (q) => q.eq("key", "storage"))
-      .unique();
-
-    if (configDoc?.value.freezeGc) {
-      console.log("[DGC] GC is frozen (freezeGc=true), skipping cleanup");
-      return null;
-    }
-
-    const now = Date.now();
-
-    // Find expired download URL cache entries
-    const expired = await ctx.db
-      .query("blobDownloadUrls")
-      .withIndex("expiresAt", (q) => q.lt("expiresAt", now))
-      .take(GC_BATCH_SIZE);
-
-    if (expired.length === 0) {
-      console.log("[DGC] No expired download URLs to clean up");
-      return null;
-    }
-
-    console.log(
-      `[DGC] Found ${expired.length} expired download URLs to clean up`,
-    );
-
-    // Delete the expired records
-    for (const record of expired) {
-      await ctx.db.delete(record._id);
-    }
-
-    console.log(`[DGC] Removed ${expired.length} expired download URL records`);
-
-    // Self-schedule if batch was full
-    if (expired.length === GC_BATCH_SIZE) {
-      console.log("[DGC] Batch full, scheduling follow-up run");
-      await ctx.scheduler.runAfter(
-        0,
-        internal.background.gcExpiredDownloadUrls,
-        {},
-      );
     }
 
     return null;

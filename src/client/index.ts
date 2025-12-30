@@ -7,7 +7,14 @@
  * import { ConvexFS } from "@convex/fs";
  * import { components } from "./_generated/api";
  *
- * export const fs = new ConvexFS(components.fs);
+ * export const fs = new ConvexFS(components.fs, {
+ *   storage: {
+ *     type: "bunny",
+ *     apiKey: process.env.BUNNY_API_KEY!,
+ *     storageZoneName: process.env.BUNNY_STORAGE_ZONE!,
+ *     cdnHostname: process.env.BUNNY_CDN_HOSTNAME!,
+ *   },
+ * });
  * ```
  *
  * @example
@@ -15,13 +22,6 @@
  * // convex/files.ts
  * import { action, query } from "./_generated/server";
  * import { fs } from "./fs";
- *
- * export const getUploadUrl = action({
- *   args: {},
- *   handler: async (ctx) => {
- *     return await fs.prepareUpload(ctx);
- *   },
- * });
  *
  * export const getFile = query({
  *   args: { path: v.string() },
@@ -67,29 +67,17 @@ export type FSComponent = ComponentApi;
 /**
  * ConvexFS client for interacting with the blob store component.
  *
- * Configuration requires a `storage` option specifying the backend type:
+ * Configuration requires a `storage` option specifying the Bunny.net backend:
  *
  * @example
  * ```typescript
- * // S3-compatible storage
- * const fs = new ConvexFS(components.fs, {
- *   storage: {
- *     type: "s3",
- *     accessKeyId: process.env.FS_ACCESS_KEY_ID!,
- *     secretAccessKey: process.env.FS_SECRET_ACCESS_KEY!,
- *     endpoint: process.env.FS_ENDPOINT!,
- *     region: process.env.FS_REGION,
- *   },
- * });
- *
- * // Bunny.net Edge Storage
  * const fs = new ConvexFS(components.fs, {
  *   storage: {
  *     type: "bunny",
  *     apiKey: process.env.BUNNY_API_KEY!,
  *     storageZoneName: process.env.BUNNY_STORAGE_ZONE!,
- *     region: process.env.BUNNY_REGION,
- *     pullZoneHostname: process.env.BUNNY_PULL_ZONE!,
+ *     cdnHostname: process.env.BUNNY_CDN_HOSTNAME!,
+ *     tokenKey: process.env.BUNNY_TOKEN_KEY, // Optional, for signed URLs
  *   },
  * });
  * ```
@@ -118,31 +106,6 @@ export class ConvexFS {
   // ============================================================================
 
   /**
-   * Get a presigned upload URL and blob ID.
-   *
-   * The client should PUT the file content directly to the returned URL.
-   * After upload completes, call `commitFiles()` to associate the blob with a path.
-   *
-   * @returns Object with `url` (presigned upload URL) and `blobId` (unique blob identifier)
-   *
-   * @example
-   * ```typescript
-   * const { url, blobId } = await fs.prepareUpload(ctx);
-   *
-   * // Client uploads to URL...
-   *
-   * await fs.commitFiles(ctx, [{ path: "/uploads/file.txt", blobId }]);
-   * ```
-   */
-  async prepareUpload(
-    ctx: ActionCtx,
-  ): Promise<{ url: string; blobId: string }> {
-    return await ctx.runAction(this.component.lib.prepareUpload, {
-      config: this.config,
-    });
-  }
-
-  /**
    * Commit uploaded blobs to file paths.
    *
    * This verifies the blobs exist in object storage and atomically
@@ -152,7 +115,7 @@ export class ConvexFS {
    *
    * @example
    * ```typescript
-   * // Simple commit
+   * // Simple commit (after uploading via /fs/upload endpoint)
    * await fs.commitFiles(ctx, [
    *   { path: "/uploads/file.txt", blobId },
    * ]);
@@ -174,12 +137,13 @@ export class ConvexFS {
   }
 
   /**
-   * Get a presigned download URL for a blob.
+   * Get a download URL for a blob.
    *
-   * URLs are cached to avoid regenerating them on every request.
+   * For Bunny storage with token authentication, this generates a signed CDN URL.
+   * Without token authentication, returns an unsigned CDN URL.
    *
    * @param blobId - The blob identifier
-   * @returns Presigned download URL
+   * @returns Download URL
    *
    * @example
    * ```typescript
@@ -454,7 +418,7 @@ export class ConvexFS {
  * Register HTTP routes for blob downloads and uploads.
  *
  * Creates routes under the given pathPrefix:
- * - POST `{pathPrefix}/upload` - Upload proxy (for Bunny.net storage)
+ * - POST `{pathPrefix}/upload` - Upload proxy endpoint
  * - GET `{pathPrefix}/blobs/{blobId}` - Returns 302 redirect to download URL
  *
  * @param http - The HTTP router instance
@@ -476,7 +440,7 @@ export class ConvexFS {
  *     type: "bunny",
  *     apiKey: process.env.BUNNY_API_KEY!,
  *     storageZoneName: process.env.BUNNY_STORAGE_ZONE!,
- *     pullZoneHostname: process.env.BUNNY_PULL_ZONE!,
+ *     cdnHostname: process.env.BUNNY_CDN_HOSTNAME!,
  *   },
  * });
  *
@@ -509,8 +473,7 @@ export function registerRoutes(
     allowedHeaders: ["Content-Type", "Content-Length"],
   });
 
-  // Route: POST /fs/upload -> Upload proxy (for Bunny.net)
-  // Register exact path first, before prefix route
+  // Route: POST /fs/upload -> Upload proxy
   cors.route({
     path: pathPrefix + "/upload",
     method: "POST",
@@ -563,7 +526,7 @@ export function registerRoutes(
     }),
   });
 
-  // Route: GET /fs/blobs/{blobId} -> 302 redirect to presigned URL
+  // Route: GET /fs/blobs/{blobId} -> 302 redirect to CDN URL
   cors.route({
     pathPrefix: pathPrefix + "/blobs/",
     method: "GET",
@@ -593,17 +556,11 @@ export function registerRoutes(
       try {
         const downloadUrl = await fs.getDownloadUrl(ctx, blobId);
 
-        // Determine cache TTL based on storage type
-        // For S3: no-store (presigned URLs have variable TTLs)
-        // For Bunny: cache for token TTL minus buffer
-        let cacheControl = "no-store";
-
-        if (fs.config.storage.type === "bunny") {
-          const tokenTtl = fs.config.downloadUrlTtl ?? 3600; // Default 1 hour
-          const cacheBuffer = 300; // 5 minute buffer
-          const cacheTtl = Math.max(0, tokenTtl - cacheBuffer);
-          cacheControl = `private, max-age=${cacheTtl}`;
-        }
+        // Cache for token TTL minus buffer
+        const tokenTtl = fs.config.downloadUrlTtl ?? 3600; // Default 1 hour
+        const cacheBuffer = 300; // 5 minute buffer
+        const cacheTtl = Math.max(0, tokenTtl - cacheBuffer);
+        const cacheControl = `private, max-age=${cacheTtl}`;
 
         return new Response(null, {
           status: 302,
