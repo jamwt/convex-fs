@@ -20,10 +20,11 @@ import { paginator } from "convex-helpers/server/pagination";
 import schema from "./schema.js";
 
 // Internal validator for a single file in the commit
+// basis: undefined = overwrite, null = must not exist, string = must match
 const fileCommitValidator = v.object({
   path: v.string(),
   blobId: v.string(),
-  basis: v.optional(v.string()), // Expected current blobId for CAS semantics
+  basis: v.optional(v.union(v.null(), v.string())),
 });
 
 // Internal validator for blob metadata passed to commitFilesInternal
@@ -67,7 +68,7 @@ export const commitFilesInternal = internalMutation({
       v.object({
         path: v.string(),
         blobId: v.string(),
-        basis: v.optional(v.string()),
+        basis: v.optional(v.union(v.null(), v.string())),
         metadata: blobMetadataValidator,
       }),
     ),
@@ -309,6 +310,7 @@ export const transact = mutation({
       }
 
       // Check dest predicate (for move/copy)
+      // basis: undefined = no check (overwrite), null = must not exist, string = must match
       if (op.op === "move" || op.op === "copy") {
         const destFile = await ctx.db
           .query("files")
@@ -316,14 +318,16 @@ export const transact = mutation({
           .unique();
 
         if (op.dest.basis === undefined) {
-          // No basis: dest must not exist
+          // No basis: no check, allow overwrite
+        } else if (op.dest.basis === null) {
+          // Null basis: dest must not exist
           if (destFile) {
             throw new Error(
               `Dest conflict at "${op.dest.path}": expected no file, found blobId "${destFile.blobId}"`,
             );
           }
         } else {
-          // Basis provided: dest blobId must match
+          // String basis: dest blobId must match
           if (!destFile) {
             throw new Error(
               `Dest conflict at "${op.dest.path}": expected blobId "${op.dest.basis}", found null`,
@@ -371,8 +375,9 @@ export const transact = mutation({
           .unique();
 
         if (sourceFile) {
-          // Handle overwrite at dest if basis was provided
-          if (op.dest.basis !== undefined) {
+          // Handle overwrite at dest (basis: undefined or string means overwrite may happen)
+          // basis: null means dest must not exist (validated above), so no overwrite needed
+          if (op.dest.basis !== null) {
             const destFile = await ctx.db
               .query("files")
               .withIndex("path", (q) => q.eq("path", op.dest.path))
@@ -423,34 +428,33 @@ export const transact = mutation({
             });
           }
 
-          // Handle overwrite at dest if basis was provided
-          if (op.dest.basis !== undefined) {
-            const destFile = await ctx.db
-              .query("files")
-              .withIndex("path", (q) => q.eq("path", op.dest.path))
+          // Check if dest exists (for overwrite handling)
+          const destFile = await ctx.db
+            .query("files")
+            .withIndex("path", (q) => q.eq("path", op.dest.path))
+            .unique();
+
+          if (destFile) {
+            // Dest exists - overwrite (basis: undefined or string, validated above)
+            // Update dest file to point to source blob
+            await ctx.db.patch(destFile._id, {
+              blobId: sourceFile.blobId,
+            });
+
+            // Decrement refCount on old dest blob
+            const destBlob = await ctx.db
+              .query("blobs")
+              .withIndex("blobId", (q) => q.eq("blobId", destFile.blobId))
               .unique();
 
-            if (destFile) {
-              // Update dest file to point to source blob
-              await ctx.db.patch(destFile._id, {
-                blobId: sourceFile.blobId,
+            if (destBlob) {
+              await ctx.db.patch(destBlob._id, {
+                refCount: destBlob.refCount - 1,
+                updatedAt: now,
               });
-
-              // Decrement refCount on old dest blob
-              const destBlob = await ctx.db
-                .query("blobs")
-                .withIndex("blobId", (q) => q.eq("blobId", destFile.blobId))
-                .unique();
-
-              if (destBlob) {
-                await ctx.db.patch(destBlob._id, {
-                  refCount: destBlob.refCount - 1,
-                  updatedAt: now,
-                });
-              }
             }
           } else {
-            // Create new file record at dest
+            // Dest doesn't exist - create new file record
             await ctx.db.insert("files", {
               path: op.dest.path,
               blobId: sourceFile.blobId,
@@ -470,7 +474,7 @@ export const transact = mutation({
  * Returns files sorted alphabetically by path, with optional prefix filtering
  * and cursor-based pagination.
  *
- * This query is compatible with `usePaginatedQuery` from `convex-helpers/react`.
+ * This query is compatible with `usePaginatedQuery` from `@convex/fs/react`.
  *
  * @example
  * ```typescript
@@ -482,6 +486,8 @@ export const transact = mutation({
  * });
  *
  * // React with usePaginatedQuery
+ * import { usePaginatedQuery } from "@convex/fs/react";
+ *
  * const { results, status, loadMore } = usePaginatedQuery(
  *   api.files.list,
  *   { prefix: "/uploads/" },
@@ -580,7 +586,7 @@ export const copyByPath = mutation({
 
     await ctx.runMutation(api.ops.transact, {
       config: args.config,
-      ops: [{ op: "copy", source, dest: { path: args.destPath } }],
+      ops: [{ op: "copy", source, dest: { path: args.destPath, basis: null } }],
     });
     return null;
   },
@@ -613,7 +619,7 @@ export const moveByPath = mutation({
 
     await ctx.runMutation(api.ops.transact, {
       config: args.config,
-      ops: [{ op: "move", source, dest: { path: args.destPath } }],
+      ops: [{ op: "move", source, dest: { path: args.destPath, basis: null } }],
     });
     return null;
   },

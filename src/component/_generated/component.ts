@@ -39,9 +39,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
-          files: Array<{ basis?: string; blobId: string; path: string }>;
+          files: Array<{ basis?: null | string; blobId: string; path: string }>;
         },
         null,
         Name
@@ -61,7 +60,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           destPath: string;
           sourcePath: string;
@@ -84,7 +82,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           path: string;
         },
@@ -107,7 +104,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
         },
         string,
@@ -128,7 +124,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           paginationOpts: {
             cursor: string | null;
@@ -167,7 +162,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           destPath: string;
           sourcePath: string;
@@ -190,7 +184,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           path: string;
         },
@@ -217,11 +210,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           ops: Array<
             | {
-                dest: { basis?: string; path: string };
+                dest: { basis?: null | string; path: string };
                 op: "move";
                 source: {
                   blobId: string;
@@ -231,7 +223,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 };
               }
             | {
-                dest: { basis?: string; path: string };
+                dest: { basis?: null | string; path: string };
                 op: "copy";
                 source: {
                   blobId: string;
@@ -269,7 +261,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           contentType: string;
           data: ArrayBuffer;
@@ -294,9 +285,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
-          files: Array<{ basis?: string; blobId: string; path: string }>;
+          files: Array<{ basis?: null | string; blobId: string; path: string }>;
         },
         null,
         Name
@@ -316,7 +306,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           destPath: string;
           sourcePath: string;
@@ -339,7 +328,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           path: string;
         },
@@ -361,7 +349,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           paginationOpts: {
             cursor: string | null;
@@ -400,7 +387,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           destPath: string;
           sourcePath: string;
@@ -423,7 +409,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           path: string;
         },
@@ -450,11 +435,10 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           ops: Array<
             | {
-                dest: { basis?: string; path: string };
+                dest: { basis?: null | string; path: string };
                 op: "move";
                 source: {
                   blobId: string;
@@ -464,7 +448,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 };
               }
             | {
-                dest: { basis?: string; path: string };
+                dest: { basis?: null | string; path: string };
                 op: "copy";
                 source: {
                   blobId: string;
@@ -505,7 +489,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
         },
         string,
@@ -526,7 +509,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               tokenKey?: string;
               type: "bunny";
             };
-            uploadUrlTtl?: number;
           };
           contentType: string;
           data: ArrayBuffer;

@@ -8,7 +8,8 @@ import { internal } from "./_generated/api.js";
 import { createBlobStore } from "./blobstore/index.js";
 import { configValidator } from "./validators.js";
 
-const DEFAULT_URL_TTL = 3600; // 1 hour
+const DEFAULT_DOWNLOAD_URL_TTL = 3600; // 1 hour
+const DEFAULT_UPLOAD_COMMIT_TTL = 14400; // 4 hours - time for client to commit after upload
 const MAX_UPLOAD_SIZE = 16 * 1024 * 1024; // 16MB
 
 export const createUpload = internalMutation({
@@ -63,7 +64,7 @@ export const uploadBlob = action({
     await store.put(blobId, new Uint8Array(data), { contentType });
 
     // Record the pending upload with metadata (we know size/contentType since we proxied)
-    const ttl = config.uploadUrlTtl ?? DEFAULT_URL_TTL;
+    const ttl = DEFAULT_UPLOAD_COMMIT_TTL;
     const expiresAt = Date.now() + ttl * 1000;
     await ctx.runMutation(internal.transfer.createUpload, {
       blobId,
@@ -123,7 +124,7 @@ export const getDownloadUrl = action({
     const { config, blobId } = args;
 
     const store = createBlobStore(config.storage);
-    const ttl = config.downloadUrlTtl ?? DEFAULT_URL_TTL;
+    const ttl = config.downloadUrlTtl ?? DEFAULT_DOWNLOAD_URL_TTL;
 
     return store.generateDownloadUrl(blobId, { expiresIn: ttl });
   },

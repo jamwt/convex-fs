@@ -95,7 +95,6 @@ export class ConvexFS {
   get config() {
     return {
       storage: this.options.storage,
-      uploadUrlTtl: this.options.uploadUrlTtl,
       downloadUrlTtl: this.options.downloadUrlTtl,
       blobGracePeriod: this.options.blobGracePeriod,
     };
@@ -113,14 +112,24 @@ export class ConvexFS {
    *
    * @param files - Array of file commits with path, blobId, and optional basis for CAS
    *
+   * The `basis` field controls overwrite behavior:
+   * - `undefined`: No check - silently overwrite if file exists
+   * - `null`: File must not exist (fails if file exists)
+   * - `string`: File's current blobId must match (CAS update)
+   *
    * @example
    * ```typescript
-   * // Simple commit (after uploading via /fs/upload endpoint)
+   * // Simple commit - overwrites if exists (after uploading via /fs/upload endpoint)
    * await fs.commitFiles(ctx, [
    *   { path: "/uploads/file.txt", blobId },
    * ]);
    *
-   * // With CAS: only succeeds if current blobId matches basis
+   * // Create only - fails if file already exists
+   * await fs.commitFiles(ctx, [
+   *   { path: "/uploads/file.txt", blobId, basis: null },
+   * ]);
+   *
+   * // CAS update - only succeeds if current blobId matches basis
    * await fs.commitFiles(ctx, [
    *   { path: "/uploads/file.txt", blobId: newBlobId, basis: oldBlobId },
    * ]);
@@ -128,7 +137,7 @@ export class ConvexFS {
    */
   async commitFiles(
     ctx: ActionCtx,
-    files: Array<{ path: string; blobId: string; basis?: string }>,
+    files: Array<{ path: string; blobId: string; basis?: string | null }>,
   ): Promise<void> {
     await ctx.runAction(this.component.lib.commitFiles, {
       config: this.config,
@@ -200,7 +209,7 @@ export class ConvexFS {
    * Returns files sorted alphabetically by path, with optional prefix filtering
    * and cursor-based pagination.
    *
-   * This method is compatible with `usePaginatedQuery` from `convex-helpers/react`.
+   * This method is compatible with `usePaginatedQuery` from `@convex/fs/react`.
    *
    * @param options.prefix - Optional path prefix filter (e.g., "/uploads/")
    * @param options.paginationOpts - Pagination options (numItems, cursor, endCursor)
@@ -249,20 +258,25 @@ export class ConvexFS {
    * fails its preconditions (source doesn't match, dest conflict), the
    * entire transaction is rejected.
    *
+   * The `dest.basis` field controls overwrite behavior:
+   * - `undefined`: No check - silently overwrite if dest exists
+   * - `null`: Dest must not exist (fails if file exists)
+   * - `string`: Dest's current blobId must match (CAS update)
+   *
    * @param ops - Array of operations to execute
    *
    * @example
    * ```typescript
    * const file = await fs.stat(ctx, "/old/path.txt");
    * if (file) {
-   *   // Move file to new path
+   *   // Move file, overwriting dest if it exists
    *   await fs.transact(ctx, [
    *     { op: "move", source: file, dest: { path: "/new/path.txt" } },
    *   ]);
    *
-   *   // Copy file (creates new reference to same blob)
+   *   // Copy file, fail if dest exists (Unix semantics)
    *   await fs.transact(ctx, [
-   *     { op: "copy", source: file, dest: { path: "/copy.txt" } },
+   *     { op: "copy", source: file, dest: { path: "/copy.txt", basis: null } },
    *   ]);
    *
    *   // Delete file
@@ -288,7 +302,7 @@ export class ConvexFS {
             contentType: string;
             size: number;
           };
-          dest: { path: string; basis?: string };
+          dest: { path: string; basis?: string | null };
         }
       | {
           op: "copy";
@@ -298,7 +312,7 @@ export class ConvexFS {
             contentType: string;
             size: number;
           };
-          dest: { path: string; basis?: string };
+          dest: { path: string; basis?: string | null };
         }
       | {
           op: "delete";

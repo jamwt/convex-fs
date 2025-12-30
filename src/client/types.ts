@@ -87,9 +87,6 @@ export interface ConvexFSOptions {
   /** Storage backend configuration */
   storage: StorageConfig;
 
-  /** Upload URL TTL in seconds. Defaults to 3600 (1 hour) */
-  uploadUrlTtl?: number;
-
   /** Download URL TTL in seconds. Defaults to 3600 (1 hour) */
   downloadUrlTtl?: number;
 

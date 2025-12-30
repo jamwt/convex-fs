@@ -32,9 +32,8 @@ export const configValidator = v.object({
   // Storage backend configuration
   storage: storageConfigValidator,
 
-  // Presigned URL TTL configuration (in seconds)
-  uploadUrlTtl: v.optional(v.number()), // defaults to 3600 (1 hour)
-  downloadUrlTtl: v.optional(v.number()), // defaults to 3600 (1 hour)
+  // Download URL TTL in seconds (defaults to 3600 / 1 hour)
+  downloadUrlTtl: v.optional(v.number()),
 
   // GC configuration
   blobGracePeriod: v.optional(v.number()), // seconds before orphaned blobs are deleted, defaults to 86400 (24 hours)
@@ -60,12 +59,15 @@ export type FileMetadata = Infer<typeof fileMetadataValidator>;
 
 /**
  * Validator for destination in move/copy operations.
+ *
+ * The `basis` field controls overwrite behavior:
+ * - `undefined`: No check - silently overwrite if dest exists
+ * - `null`: Dest must not exist (fails if file exists)
+ * - `string`: Dest blobId must match this value (CAS update)
  */
 export const destValidator = v.object({
   path: v.string(),
-  // If provided, dest blobId must match (allows overwrite).
-  // If omitted, dest must not exist.
-  basis: v.optional(v.string()),
+  basis: v.optional(v.union(v.null(), v.string())),
 });
 
 /** TypeScript type for destination. */

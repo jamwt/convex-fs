@@ -41,14 +41,11 @@ export default defineSchema({
     value: v.object({
       // Storage backend configuration
       storage: storageConfigValidator,
-      // Presigned URL TTL configuration (in seconds)
-      uploadUrlTtl: v.optional(v.number()),
+      // Download URL TTL in seconds
       downloadUrlTtl: v.optional(v.number()),
       // GC configuration
       blobGracePeriod: v.optional(v.number()), // Seconds before orphaned blobs are deleted
       freezeGc: v.optional(v.boolean()), // If true, all GC jobs will NOOP (emergency stop)
-
-      // Checksum
     }),
     checksum: v.optional(v.string()),
   }).index("key", ["key"]),

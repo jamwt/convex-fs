@@ -27,7 +27,6 @@ export async function checksum(obj: unknown): Promise<string> {
 // Validator matching the config table schema
 const storedConfigValidator = v.object({
   storage: storageConfigValidator,
-  uploadUrlTtl: v.optional(v.number()),
   downloadUrlTtl: v.optional(v.number()),
   blobGracePeriod: v.optional(v.number()),
   freezeGc: v.optional(v.boolean()),
@@ -75,7 +74,6 @@ export const ensureConfigStored = internalMutation({
 
     const newValue = {
       storage: args.config.storage,
-      uploadUrlTtl: args.config.uploadUrlTtl,
       downloadUrlTtl: args.config.downloadUrlTtl,
       blobGracePeriod: args.config.blobGracePeriod,
     };
