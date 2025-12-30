@@ -67,6 +67,7 @@
   "dependencies": {
     "aws4fetch": "^1.0.20",
     "convex-helpers": "^0.1.108",
+    "fast-json-stable-stringify": "^2.1.0",
     "lucide-react": "^0.562.0"
   },
   "peerDependencies": {

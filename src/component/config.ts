@@ -8,6 +8,21 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server.js";
 import { configValidator, storageConfigValidator } from "./validators.js";
+import stringify from "fast-json-stable-stringify";
+
+async function sha256Hex(s: string): Promise<string> {
+  const bytes = new TextEncoder().encode(s);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function checksum(obj: unknown): Promise<string> {
+  // stable stringify => deterministic for JSON-y values
+  const stable = stringify(obj);
+  return sha256Hex(stable);
+}
 
 // Validator matching the config table schema
 const storedConfigValidator = v.object({
@@ -63,19 +78,25 @@ export const ensureConfigStored = internalMutation({
       uploadUrlTtl: args.config.uploadUrlTtl,
       downloadUrlTtl: args.config.downloadUrlTtl,
       blobGracePeriod: args.config.blobGracePeriod,
-      // freezeGc is dashboard-only - preserve existing value
-      freezeGc: existing?.value.freezeGc,
     };
+
+    const newChecksum = await checksum(newValue);
 
     if (!existing) {
       await ctx.db.insert("config", {
         key: "storage",
         value: newValue,
+        checksum: newChecksum,
       });
     } else {
-      await ctx.db.patch(existing._id, {
-        value: newValue,
-      });
+      // Delete the freezeGc field if it exists
+      if (existing.value.freezeGc) {
+        delete existing.value.freezeGc;
+      }
+      // Only update if there are actual changes (deep equal, ignoring undefined fields in newValue)
+      if (existing.checksum !== newChecksum) {
+        await ctx.db.patch(existing._id, { value: newValue, checksum: newChecksum });
+      } 
     }
 
     return null;
