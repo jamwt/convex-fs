@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Virtual filesystem semantics for Convex, backed by Bunny.net Edge Storage</strong>
+  <strong>Virtual filesystem semantics for Convex, backed by Bunny.net Edge Storage & CDN</strong>
 </p>
 
 ---
@@ -28,6 +28,10 @@ CDN.
   recover from accidental deletions
 - **Flexible authentication** — Bring your own auth logic for uploads and
   downloads
+
+## Example app
+
+The repository includes a runnable example app that allows you to curate a [photo gallery](./example).
 
 ## Status
 
