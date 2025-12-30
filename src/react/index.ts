@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * React hooks for the ConvexFS blob store component.
+ * React hooks for the ConvexFS component.
  *
  * @example
  * ```typescript

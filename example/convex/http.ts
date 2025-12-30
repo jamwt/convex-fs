@@ -10,6 +10,18 @@ const http = httpRouter();
 // - GET /fs/blobs/{blobId} - Returns 302 redirect to signed CDN URL
 registerRoutes(http, components.fs, fs, {
   pathPrefix: "/fs",
+  uploadAuth: async () => {
+    // TODO: Add real auth check, e.g.:
+    // const identity = await ctx.auth.getUserIdentity();
+    // return identity !== null;
+    return true;
+  },
+  downloadAuth: async () => {
+    // TODO: Add real auth check, e.g.:
+    // const identity = await ctx.auth.getUserIdentity();
+    // return identity !== null;
+    return true;
+  },
 });
 
 export default http;

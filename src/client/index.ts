@@ -424,7 +424,7 @@ export class ConvexFS {
  * @param http - The HTTP router instance
  * @param component - The FS component reference
  * @param fs - A ConvexFS instance with storage configuration
- * @param config - Optional configuration (auth, pathPrefix)
+ * @param config - Configuration with required auth callbacks
  *
  * @example
  * ```typescript
@@ -446,15 +446,19 @@ export class ConvexFS {
  *
  * registerRoutes(http, components.fs, fs, {
  *   pathPrefix: "/fs",
- *   auth: async (ctx, blobId) => {
+ *   uploadAuth: async (ctx) => {
+ *     const identity = await ctx.auth.getUserIdentity();
+ *     return identity !== null;
+ *   },
+ *   downloadAuth: async (ctx, blobId) => {
  *     const identity = await ctx.auth.getUserIdentity();
  *     return identity !== null;
  *   },
  * });
  *
  * // Routes created:
- * // POST /fs/upload - Upload proxy
- * // GET /fs/blobs/{blobId} - Download redirect
+ * // POST /fs/upload - Upload proxy (requires uploadAuth)
+ * // GET /fs/blobs/{blobId} - Download redirect (requires downloadAuth)
  *
  * export default http;
  * ```
@@ -463,9 +467,9 @@ export function registerRoutes(
   http: HttpRouter,
   component: ComponentApi,
   fs: ConvexFS,
-  config?: RegisterRoutesConfig,
+  config: RegisterRoutesConfig,
 ): void {
-  const pathPrefix = config?.pathPrefix ?? "/fs";
+  const pathPrefix = config.pathPrefix ?? "/fs";
 
   // Create CORS-enabled router for cross-origin requests
   const cors = corsRouter(http, {
@@ -478,6 +482,22 @@ export function registerRoutes(
     path: pathPrefix + "/upload",
     method: "POST",
     handler: httpActionGeneric(async (ctx, req) => {
+      // Auth check for upload
+      try {
+        const allowed = await config.uploadAuth(ctx);
+        if (!allowed) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      } catch {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       const contentType =
         req.headers.get("Content-Type") ?? "application/octet-stream";
       const contentLengthHeader = req.headers.get("Content-Length");
@@ -537,19 +557,26 @@ export function registerRoutes(
       const blobId = pathParts[pathParts.length - 1];
 
       if (!blobId) {
-        return new Response("Missing blobId", { status: 400 });
+        return new Response(JSON.stringify({ error: "Missing blobId" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
-      // Auth check if provided
-      if (config?.auth) {
-        try {
-          const allowed = await config.auth(ctx, blobId);
-          if (!allowed) {
-            return new Response("Forbidden", { status: 403 });
-          }
-        } catch {
-          return new Response("Forbidden", { status: 403 });
+      // Auth check for download
+      try {
+        const allowed = await config.downloadAuth(ctx, blobId);
+        if (!allowed) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          });
         }
+      } catch {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       // Get download URL using the fs instance's config
@@ -572,7 +599,10 @@ export function registerRoutes(
       } catch (error) {
         // Blob not found or other error
         console.error("Error getting download URL:", error);
-        return new Response("Not Found", { status: 404 });
+        return new Response(JSON.stringify({ error: "Not Found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
       }
     }),
   });

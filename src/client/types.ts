@@ -33,10 +33,18 @@ export type ActionCtx = Pick<
 export type HttpActionCtx = GenericActionCtx<GenericDataModel>;
 
 /**
- * Auth callback for HTTP routes.
+ * Auth callback for uploads.
+ * Called before an upload is accepted.
+ * Return true to allow the upload, false to deny.
+ */
+export type UploadAuthCallback = (ctx: HttpActionCtx) => Promise<boolean>;
+
+/**
+ * Auth callback for downloads.
+ * Called before redirecting to the download URL.
  * Return true to allow access, false to deny.
  */
-export type AuthCallback = (
+export type DownloadAuthCallback = (
   ctx: HttpActionCtx,
   blobId: string,
 ) => Promise<boolean>;
@@ -93,11 +101,14 @@ export interface ConvexFSOptions {
  * Configuration for registerRoutes().
  */
 export interface RegisterRoutesConfig {
-  /** Path prefix for blob routes. Defaults to "/blobs" */
+  /** Path prefix for routes. Defaults to "/fs" */
   pathPrefix?: string;
 
-  /** Auth callback - return true to allow access, false to deny */
-  auth?: AuthCallback;
+  /** Auth callback for uploads - called before upload is accepted */
+  uploadAuth: UploadAuthCallback;
+
+  /** Auth callback for downloads - called before redirecting to download URL */
+  downloadAuth: DownloadAuthCallback;
 }
 
 export type { HttpRouter };
