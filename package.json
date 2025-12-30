@@ -1,8 +1,8 @@
 {
   "name": "convex-fs",
   "description": "A fs component for Convex.",
-  "repository": "github:get-convex/fs-component",
-  "homepage": "https://github.com/jamwt/convex-fs#readme",
+  "repository": "github:jamwt/convex-fs",
+  "homepage": "https://convexfs.dev",
   "bugs": {
     "url": "https://github.com/jamwt/convex-fs/issues"
   },
