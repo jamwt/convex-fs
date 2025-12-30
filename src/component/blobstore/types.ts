@@ -57,16 +57,6 @@ export interface PutOptions {
 }
 
 /**
- * Metadata returned from a head request.
- */
-export interface BlobMetadata {
-  /** Content-Type of the blob, if set. */
-  contentType?: string;
-  /** Size of the blob in bytes. */
-  contentLength: number;
-}
-
-/**
  * Result of a delete operation.
  * - "deleted": The blob was successfully deleted from storage
  * - "not_found": The blob did not exist (may have already been deleted)
@@ -97,23 +87,6 @@ export interface BlobStore {
    * For small, in-memory objects only.
    */
   put(key: string, data: Blob | Uint8Array, opts?: PutOptions): Promise<void>;
-
-  /**
-   * Download a blob directly to the server.
-   * Returns null if the blob does not exist.
-   */
-  get(key: string): Promise<Blob | null>;
-
-  /**
-   * Get metadata for a blob without downloading it.
-   * Returns null if the blob does not exist.
-   */
-  head(key: string): Promise<BlobMetadata | null>;
-
-  /**
-   * Check if a blob exists.
-   */
-  exists(key: string): Promise<boolean>;
 
   /**
    * Delete a blob.

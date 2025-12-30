@@ -1,6 +1,5 @@
 import type {
   BlobStore,
-  BlobMetadata,
   DeleteResult,
   BunnyBlobStoreConfig,
   UploadUrlOptions,
@@ -130,81 +129,6 @@ export function createBunnyBlobStore(config: BunnyBlobStoreConfig): BlobStore {
           `Failed to put blob to Bunny: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
         );
       }
-    },
-
-    async get(key: string): Promise<Blob | null> {
-      const url = buildStorageUrl(key);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          AccessKey: apiKey,
-        },
-      });
-
-      if (response.status === 404) {
-        return null;
-      }
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(
-          `Failed to get blob from Bunny: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
-        );
-      }
-
-      return response.blob();
-    },
-
-    async head(key: string): Promise<BlobMetadata | null> {
-      const url = buildStorageUrl(key);
-
-      // Bunny doesn't have a dedicated HEAD endpoint, so we use a Range request
-      // to fetch just the first byte and extract metadata from headers
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          AccessKey: apiKey,
-          Range: "bytes=0-0",
-        },
-      });
-
-      if (response.status === 404) {
-        return null;
-      }
-
-      // 206 Partial Content is the expected response for a Range request
-      if (!response.ok && response.status !== 206) {
-        const text = await response.text().catch(() => "");
-        throw new Error(
-          `Failed to head blob from Bunny: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
-        );
-      }
-
-      const contentType = response.headers.get("Content-Type") ?? undefined;
-
-      // Content-Range header format: "bytes 0-0/12345" where 12345 is total size
-      const contentRange = response.headers.get("Content-Range");
-      let contentLength = 0;
-      if (contentRange) {
-        const match = contentRange.match(/\/(\d+)$/);
-        if (match) {
-          contentLength = parseInt(match[1], 10);
-        }
-      } else {
-        // Fallback to Content-Length if no Content-Range
-        const lengthHeader = response.headers.get("Content-Length");
-        if (lengthHeader) {
-          contentLength = parseInt(lengthHeader, 10);
-        }
-      }
-
-      return { contentType, contentLength };
-    },
-
-    async exists(key: string): Promise<boolean> {
-      const metadata = await this.head(key);
-      return metadata !== null;
     },
 
     async delete(key: string): Promise<DeleteResult> {

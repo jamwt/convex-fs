@@ -1,7 +1,6 @@
 export type {
   BlobStore,
   BunnyBlobStoreConfig,
-  BlobMetadata,
   UploadUrlOptions,
   DownloadUrlOptions,
   PutOptions,

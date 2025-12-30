@@ -9,7 +9,6 @@ import {
   query,
 } from "./_generated/server.js";
 import { api, internal } from "./_generated/api.js";
-import { createBlobStore } from "./blobstore/index.js";
 
 import {
   configValidator,
@@ -159,21 +158,21 @@ export const commitFiles = action({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { config, files } = args;
+    const { config: _config, files } = args;
 
     if (files.length === 0) {
       return null;
     }
 
-    // 1. Check uploads table for cached metadata (from proxy uploads)
+    // Get metadata from uploads table (populated during proxy upload)
     const blobIds = files.map((f) => f.blobId);
     const uploadRecords = await ctx.runQuery(
       internal.transfer.getUploadsByBlobIds,
       { blobIds },
     );
 
-    // Build map of cached metadata from uploads table
-    const cachedMetadataMap = new Map<
+    // Build map of metadata from uploads table
+    const metadataMap = new Map<
       string,
       { contentType: string; size: number }
     >();
@@ -183,47 +182,26 @@ export const commitFiles = action({
         record.contentType !== undefined &&
         record.size !== undefined
       ) {
-        cachedMetadataMap.set(record.blobId, {
+        metadataMap.set(record.blobId, {
           contentType: record.contentType,
           size: record.size,
         });
       }
     }
 
-    // 2. For blobs without cached metadata, fetch from storage
-    const blobsNeedingHead = files.filter(
-      (f) => !cachedMetadataMap.has(f.blobId),
-    );
-
-    if (blobsNeedingHead.length > 0) {
-      const store = createBlobStore(config.storage);
-      const metadataResults = await Promise.all(
-        blobsNeedingHead.map(async (file) => {
-          const metadata = await store.head(file.blobId);
-          return { blobId: file.blobId, metadata };
-        }),
+    // Verify all blobs have metadata (should always be true with proxy upload)
+    const missingMetadata = files.filter((f) => !metadataMap.has(f.blobId));
+    if (missingMetadata.length > 0) {
+      const missingIds = missingMetadata.map((f) => f.blobId).join(", ");
+      throw new Error(
+        `Upload records not found for blobs: ${missingIds}. ` +
+          `Blobs must be uploaded via the /fs/upload endpoint before committing.`,
       );
-
-      // Check all blobs exist
-      const missingBlobs = metadataResults.filter((r) => r.metadata === null);
-      if (missingBlobs.length > 0) {
-        const missingIds = missingBlobs.map((r) => r.blobId).join(", ");
-        throw new Error(`Blobs not found in object store: ${missingIds}`);
-      }
-
-      // Add to cached metadata map
-      for (const result of metadataResults) {
-        cachedMetadataMap.set(result.blobId, {
-          contentType:
-            result.metadata!.contentType ?? "application/octet-stream",
-          size: result.metadata!.contentLength,
-        });
-      }
     }
 
-    // 3. Prepare files with metadata for the internal mutation
+    // Prepare files with metadata for the internal mutation
     const filesWithMetadata = files.map((file) => {
-      const metadata = cachedMetadataMap.get(file.blobId)!;
+      const metadata = metadataMap.get(file.blobId)!;
       return {
         path: file.path,
         blobId: file.blobId,
