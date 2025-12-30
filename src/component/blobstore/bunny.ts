@@ -1,11 +1,12 @@
-import type {
-  BlobStore,
-  DeleteResult,
-  BunnyBlobStoreConfig,
-  UploadUrlOptions,
-  DownloadUrlOptions,
-  PutOptions,
-} from "./types";
+import {
+  MAX_FILE_SIZE_BYTES,
+  type BlobStore,
+  type DeleteResult,
+  type BunnyBlobStoreConfig,
+  type UploadUrlOptions,
+  type DownloadUrlOptions,
+  type PutOptions,
+} from "./types.js";
 
 const DEFAULT_TOKEN_TTL = 3600; // 1 hour
 
@@ -105,6 +106,14 @@ export function createBunnyBlobStore(config: BunnyBlobStoreConfig): BlobStore {
       data: Blob | Uint8Array,
       opts?: PutOptions,
     ): Promise<void> {
+      // Check file size limit
+      const size = data instanceof Blob ? data.size : data.byteLength;
+      if (size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(
+          `File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
+        );
+      }
+
       const url = buildStorageUrl(key);
       const contentType = opts?.contentType ?? "application/octet-stream";
 
@@ -129,6 +138,30 @@ export function createBunnyBlobStore(config: BunnyBlobStoreConfig): BlobStore {
           `Failed to put blob to Bunny: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
         );
       }
+    },
+
+    async get(key: string): Promise<Blob | null> {
+      const url = buildStorageUrl(key);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          AccessKey: apiKey,
+        },
+      });
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(
+          `Failed to get blob from Bunny: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
+        );
+      }
+
+      return response.blob();
     },
 
     async delete(key: string): Promise<DeleteResult> {

@@ -5,12 +5,11 @@ import {
   internalQuery,
 } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
-import { createBlobStore } from "./blobstore/index.js";
+import { createBlobStore, MAX_FILE_SIZE_BYTES } from "./blobstore/index.js";
 import { configValidator } from "./validators.js";
 
 const DEFAULT_DOWNLOAD_URL_TTL = 3600; // 1 hour
 const DEFAULT_UPLOAD_COMMIT_TTL = 14400; // 4 hours - time for client to commit after upload
-const MAX_UPLOAD_SIZE = 16 * 1024 * 1024; // 16MB
 
 export const createUpload = internalMutation({
   args: {
@@ -46,10 +45,10 @@ export const uploadBlob = action({
   handler: async (ctx, args) => {
     const { config, data, contentType } = args;
 
-    // Validate size
-    if (data.byteLength > MAX_UPLOAD_SIZE) {
+    // Validate size (15MB limit to leave headroom under Convex 16MB return limit)
+    if (data.byteLength > MAX_FILE_SIZE_BYTES) {
       throw new Error(
-        `File too large: ${data.byteLength} bytes (max ${MAX_UPLOAD_SIZE} bytes)`,
+        `File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
       );
     }
 

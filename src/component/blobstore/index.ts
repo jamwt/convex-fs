@@ -8,6 +8,8 @@ export type {
   DeleteResult,
 } from "./types.js";
 
+export { MAX_FILE_SIZE_BYTES } from "./types.js";
+
 export { createBunnyBlobStore } from "./bunny.js";
 export { createTestBlobStore } from "./test.js";
 

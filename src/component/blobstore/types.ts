@@ -77,6 +77,9 @@ export interface PutOptions {
  */
 export type DeleteResult = { status: "deleted" } | { status: "not_found" };
 
+/** Maximum file size in bytes (15MB). */
+export const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+
 /**
  * Interface for a blob store that supports basic CRUD operations
  * and presigned URL generation for client-side uploads/downloads.
@@ -96,9 +99,15 @@ export interface BlobStore {
 
   /**
    * Upload a blob directly from the server.
-   * For small, in-memory objects only.
+   * Maximum file size is 15MB.
    */
   put(key: string, data: Blob | Uint8Array, opts?: PutOptions): Promise<void>;
+
+  /**
+   * Download a blob from storage.
+   * Returns null if the blob does not exist.
+   */
+  get(key: string): Promise<Blob | null>;
 
   /**
    * Delete a blob.

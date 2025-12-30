@@ -12,6 +12,8 @@ export {
   copyByPath,
   moveByPath,
   deleteByPath,
+  getBlob,
+  getFile,
 } from "./ops.js";
 
 // Public API from transfer

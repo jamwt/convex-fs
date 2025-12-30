@@ -170,6 +170,61 @@ export class ConvexFS {
     });
   }
 
+  /**
+   * Get a blob's raw data by blobId.
+   *
+   * This downloads the blob from storage and returns it as an ArrayBuffer.
+   * Returns null if the blob doesn't exist.
+   *
+   * @param blobId - The blob identifier
+   * @returns ArrayBuffer of blob data, or null if not found
+   *
+   * @example
+   * ```typescript
+   * const data = await fs.getBlob(ctx, blobId);
+   * if (data) {
+   *   // Process the ArrayBuffer...
+   *   const text = new TextDecoder().decode(data);
+   * }
+   * ```
+   */
+  async getBlob(ctx: ActionCtx, blobId: string): Promise<ArrayBuffer | null> {
+    return await ctx.runAction(this.component.lib.getBlob, {
+      config: this.config,
+      blobId,
+    });
+  }
+
+  /**
+   * Get a file's contents and metadata by path.
+   *
+   * This looks up the file by path, downloads the blob from storage,
+   * and returns both the data and metadata.
+   * Returns null if the file doesn't exist.
+   *
+   * @param path - The file path
+   * @returns Object with data, contentType, and size, or null if not found
+   *
+   * @example
+   * ```typescript
+   * const result = await fs.getFile(ctx, "/images/photo.jpg");
+   * if (result) {
+   *   console.log(result.contentType); // "image/jpeg"
+   *   console.log(result.size); // 12345
+   *   // result.data is an ArrayBuffer
+   * }
+   * ```
+   */
+  async getFile(
+    ctx: ActionCtx,
+    path: string,
+  ): Promise<{ data: ArrayBuffer; contentType: string; size: number } | null> {
+    return await ctx.runAction(this.component.lib.getFile, {
+      config: this.config,
+      path,
+    });
+  }
+
   // ============================================================================
   // Queries
   // ============================================================================
@@ -519,11 +574,11 @@ export function registerRoutes(
         ? parseInt(contentLengthHeader, 10)
         : 0;
 
-      // Check size limit (16MB)
-      const MAX_UPLOAD_SIZE = 16 * 1024 * 1024;
+      // Check size limit (15MB to leave headroom under Convex 16MB return limit)
+      const MAX_UPLOAD_SIZE = 15 * 1024 * 1024;
       if (contentLength > MAX_UPLOAD_SIZE) {
         return new Response(
-          JSON.stringify({ error: "File too large (max 16MB)" }),
+          JSON.stringify({ error: "File too large. Maximum size is 15MB." }),
           {
             status: 413,
             headers: { "Content-Type": "application/json" },

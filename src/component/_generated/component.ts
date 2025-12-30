@@ -94,6 +94,29 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      getBlob: FunctionReference<
+        "action",
+        "internal",
+        {
+          blobId: string;
+          config: {
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
+          };
+        },
+        null | ArrayBuffer,
+        Name
+      >;
       getDownloadUrl: FunctionReference<
         "action",
         "internal",
@@ -115,6 +138,29 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           };
         },
         string,
+        Name
+      >;
+      getFile: FunctionReference<
+        "action",
+        "internal",
+        {
+          config: {
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
+          };
+          path: string;
+        },
+        null | { contentType: string; data: ArrayBuffer; size: number },
         Name
       >;
       list: FunctionReference<
@@ -356,6 +402,52 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           path: string;
         },
         null,
+        Name
+      >;
+      getBlob: FunctionReference<
+        "action",
+        "internal",
+        {
+          blobId: string;
+          config: {
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
+          };
+        },
+        null | ArrayBuffer,
+        Name
+      >;
+      getFile: FunctionReference<
+        "action",
+        "internal",
+        {
+          config: {
+            blobGracePeriod?: number;
+            downloadUrlTtl?: number;
+            storage:
+              | {
+                  apiKey: string;
+                  cdnHostname: string;
+                  region?: string;
+                  storageZoneName: string;
+                  tokenKey?: string;
+                  type: "bunny";
+                }
+              | { type: "test" };
+          };
+          path: string;
+        },
+        null | { contentType: string; data: ArrayBuffer; size: number },
         Name
       >;
       list: FunctionReference<

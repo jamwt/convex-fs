@@ -17,6 +17,7 @@ import {
 } from "./validators.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "./schema.js";
+import { createBlobStore } from "./blobstore/index.js";
 
 // Internal validator for a single file in the commit
 // basis: undefined = overwrite, null = must not exist, string = must match
@@ -629,6 +630,114 @@ export const deleteByPath = mutation({
       ops: [{ op: "delete", source }],
     });
     return null;
+  },
+});
+
+// ============================================================================
+// Blob/File Download
+// ============================================================================
+
+/**
+ * Get a blob's raw data by blobId.
+ *
+ * This downloads the blob from storage and returns it as an ArrayBuffer.
+ * Returns null if the blob doesn't exist.
+ *
+ * @example
+ * const data = await ctx.runAction(api.ops.getBlob, {
+ *   config,
+ *   blobId: "abc123",
+ * });
+ * if (data) {
+ *   // Process the ArrayBuffer...
+ * }
+ */
+export const getBlob = action({
+  args: {
+    config: configValidator,
+    blobId: v.string(),
+  },
+  returns: v.union(v.null(), v.bytes()),
+  handler: async (ctx, args) => {
+    const { config, blobId } = args;
+
+    const store = createBlobStore(config.storage);
+    const blob = await store.get(blobId);
+
+    if (!blob) {
+      return null;
+    }
+
+    return await blob.arrayBuffer();
+  },
+});
+
+/**
+ * Get a file's contents and metadata by path.
+ *
+ * This looks up the file by path, downloads the blob from storage,
+ * and returns both the data and metadata.
+ * Returns null if the file doesn't exist.
+ *
+ * @example
+ * const result = await ctx.runAction(api.ops.getFile, {
+ *   config,
+ *   path: "/images/photo.jpg",
+ * });
+ * if (result) {
+ *   console.log(result.contentType); // "image/jpeg"
+ *   console.log(result.size); // 12345
+ *   // result.data is an ArrayBuffer
+ * }
+ */
+export const getFile = action({
+  args: {
+    config: configValidator,
+    path: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      data: v.bytes(),
+      contentType: v.string(),
+      size: v.number(),
+    }),
+  ),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    data: ArrayBuffer;
+    contentType: string;
+    size: number;
+  } | null> => {
+    const { config, path } = args;
+
+    // Look up file by path to get blobId and metadata
+    const file: {
+      path: string;
+      blobId: string;
+      contentType: string;
+      size: number;
+    } | null = await ctx.runQuery(api.ops.stat, { config, path });
+    if (!file) {
+      return null;
+    }
+
+    // Get blob from storage
+    const store = createBlobStore(config.storage);
+    const blob = await store.get(file.blobId);
+    if (!blob) {
+      // File record exists but blob is missing from storage
+      // This shouldn't happen in normal operation
+      return null;
+    }
+
+    return {
+      data: await blob.arrayBuffer(),
+      contentType: file.contentType,
+      size: file.size,
+    };
   },
 });
 
