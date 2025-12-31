@@ -683,9 +683,7 @@ export function registerRoutes(
     method: "GET",
     handler: httpActionGeneric(async (ctx, req) => {
       // Extract blobId from URL
-      const url = new URL(req.url);
-      const pathParts = url.pathname.split("/");
-      const blobId = pathParts[pathParts.length - 1];
+      const { blobId, path } = parseDownloadUrl(req.url);
 
       if (!blobId) {
         return new Response(JSON.stringify({ error: "Missing blobId" }), {
@@ -694,9 +692,25 @@ export function registerRoutes(
         });
       }
 
+      if (path) {
+        const file = await fs.stat(ctx, path);
+        if (!file) {
+          return new Response(JSON.stringify({ error: "File not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (file.blobId !== blobId) {
+          return new Response(JSON.stringify({ error: "Blob ID mismatch" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
       // Auth check for download
       try {
-        const allowed = await config.downloadAuth(ctx, blobId);
+        const allowed = await config.downloadAuth(ctx, blobId, path);
         if (!allowed) {
           return new Response(JSON.stringify({ error: "Forbidden" }), {
             status: 403,
@@ -737,6 +751,34 @@ export function registerRoutes(
       }
     }),
   });
+}
+
+/**
+ * Build a download URL for a blob.
+ * @param siteUrl - The base URL of the site
+ * @param prefix - The prefix for the download URL
+ * @param blobId - The ID of the blob
+ * @param path - The path of the file being downloaded
+ * @returns The download URL
+ */
+export function buildDownloadUrl(siteUrl: string, prefix: string, blobId: string, path?: string): string {
+  let url = `${siteUrl}${prefix}/blobs/${blobId}`;
+  if (path !== undefined) {
+    url += `?path=${encodeURIComponent(path)}`;
+  }
+  return url;
+}
+
+/**
+ * Parse a download URL into a blob ID and path.
+ * @param url - The download URL
+ * @returns The blob ID and path
+ */
+export function parseDownloadUrl(url: string): { blobId: string, path?: string } {
+  const urlObj = new URL(url);
+  const blobId = urlObj.pathname.split("/").pop() ?? "";
+  const path = urlObj.searchParams.get("path");
+  return { blobId, path: path ? decodeURIComponent(path) : undefined };
 }
 
 export default ConvexFS;

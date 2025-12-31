@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "convex-helpers/react";
+import { buildDownloadUrl } from "convex-fs";
 import { api } from "../convex/_generated/api";
 import {
   FolderInput,
@@ -13,6 +14,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import "./App.css";
+
+// Path prefix for ConvexFS routes (must match http.ts)
+const FS_PREFIX = "/fs";
 
 // Types
 type UploadingFile = {
@@ -359,7 +363,12 @@ function App() {
             {images.map((image) => (
               <div key={image.path} className="photo-grid-item">
                 <img
-                  src={`${siteUrl}/fs/blobs/${image.blobId}`}
+                  src={buildDownloadUrl(
+                    siteUrl,
+                    FS_PREFIX,
+                    image.blobId,
+                    image.path,
+                  )}
                   alt={image.path}
                   loading="lazy"
                 />

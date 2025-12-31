@@ -112,7 +112,14 @@ a specific role or checking rate limits.
 ### Download authentication
 
 The `downloadAuth` callback is called before redirecting to a signed download
-URL. The callback receives both the context and the `blobId` being requested.
+URL. The callback receives the context, the `blobId` being requested, and
+optionally the file `path` (if the client included it in the download URL).
+
+```typescript
+downloadAuth: async (ctx, blobId, path?) => {
+  // Return true to allow, false to deny
+};
+```
 
 Whether you need download authentication depends on your use case:
 
@@ -120,23 +127,65 @@ Whether you need download authentication depends on your use case:
   unauthenticated access. The simple `return true` is fine here.
 
 - **Private user content** (personal files, confidential documents): You'll want
-  to verify the user has permission to access this specific blob.
+  to verify the user has permission to access this specific file.
 
-For private content, you'll typically need to look up which file(s) reference
-this blob and check if the user has access:
+#### Using the path parameter
+
+When you construct download URLs using `buildDownloadUrl` with the `path`
+parameter (recommended), the server passes that path to your `downloadAuth`
+callback. This makes authorization much simpler—you can check permissions
+directly on the path without needing a separate blobId-to-path lookup:
 
 ```typescript
 registerRoutes(http, components.fs, fs, {
   pathPrefix: "/fs",
   // ...
-  downloadAuth: async (ctx, blobId) => {
+  downloadAuth: async (ctx, blobId, path) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return false;
     }
 
-    // Look up the file and verify the user can access it
-    // This depends on your app's data model
+    // With path available, you can check permissions directly
+    if (path) {
+      // e.g., verify user owns this file path
+      return path.startsWith(`/users/${identity.subject}/`);
+    }
+
+    // Fallback for requests without path (legacy URLs)
+    return false;
+  },
+});
+```
+
+<Aside type="tip">
+  When a `path` is provided in the download URL, the server automatically
+  validates that the file exists at that path and that its blobId matches the
+  URL's blobId—before calling your `downloadAuth` callback. This prevents users
+  from crafting URLs with mismatched path/blobId combinations.
+</Aside>
+
+#### Without path (blobId-only authorization)
+
+If you need to support download URLs without the path parameter, you'll need to
+look up which file(s) reference the blobId and check permissions accordingly:
+
+```typescript
+registerRoutes(http, components.fs, fs, {
+  pathPrefix: "/fs",
+  // ...
+  downloadAuth: async (ctx, blobId, path) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return false;
+    }
+
+    // If path is available, use it directly
+    if (path) {
+      return path.startsWith(`/users/${identity.subject}/`);
+    }
+
+    // Fallback: look up files by blobId
     const canAccess = await ctx.runQuery(api.files.canUserAccessBlob, {
       userId: identity.subject,
       blobId,

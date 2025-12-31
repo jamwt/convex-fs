@@ -43,10 +43,12 @@ export type UploadAuthCallback = (ctx: HttpActionCtx) => Promise<boolean>;
  * Auth callback for downloads.
  * Called before redirecting to the download URL.
  * Return true to allow access, false to deny.
+ * If a path is provided, it is the path of the file being downloaded.
  */
 export type DownloadAuthCallback = (
   ctx: HttpActionCtx,
   blobId: string,
+  path?: string,
 ) => Promise<boolean>;
 
 // =============================================================================
