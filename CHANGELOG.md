@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+Support path-based auth on blob download endpoint.
+
 ## 0.1.2
 
 Minor package metadata fixes.
