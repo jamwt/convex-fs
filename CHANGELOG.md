@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+File expiration.
+
 ## 0.1.6
 
 Removed lucide-react from deps.
