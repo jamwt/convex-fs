@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+Removed lucide-react from deps.
+
 ## 0.1.3
 
 Support path-based auth on blob download endpoint.
