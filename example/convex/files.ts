@@ -113,11 +113,3 @@ export const setExpiration = mutation({
     ]);
   },
 });
-
-export const theTime = query({
-  args: {
-  },
-  handler: async () => {
-    return Date.now();
-  },
-});

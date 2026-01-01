@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "convex-helpers/react";
 import { buildDownloadUrl } from "convex-fs";
 import { api } from "../convex/_generated/api";
@@ -119,7 +119,6 @@ function App() {
   const copyFile = useMutation(api.files.copyFile);
   const deleteFile = useMutation(api.files.deleteFile);
   const setExpiration = useMutation(api.files.setExpiration);
-  const theTime = useQuery(api.files.theTime);
 
   const {
     results: images,
@@ -418,10 +417,6 @@ function App() {
   return (
     <div className="app">
       <h1>Convex FS - Photo Gallery</h1>
-      <h3>
-        The time is{" "}
-        {theTime ? new Date(theTime).toLocaleString() : "loading..."}
-      </h3>
 
       {/* Drop Zone */}
       <div
