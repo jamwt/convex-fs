@@ -69,10 +69,22 @@ function App() {
   } = usePaginatedQuery(api.files.listImages, {}, { initialNumItems: 24 });
 
   // Get site URL for uploads and image URLs
-  const envUrl = import.meta.env.VITE_CONVEX_URL ?? "";
-  const siteUrl = envUrl.endsWith(".cloud")
-    ? envUrl.replace(/\.cloud$/, ".site")
-    : envUrl;
+  const siteUrl = (() => {
+    // Explicit site URL takes precedence (required for self-hosted/local)
+    if (import.meta.env.VITE_CONVEX_SITE_URL) {
+      return import.meta.env.VITE_CONVEX_SITE_URL;
+    }
+
+    // For Convex Cloud, derive .site from .cloud URL
+    const convexUrl = import.meta.env.VITE_CONVEX_URL ?? "";
+    if (convexUrl.includes(".cloud")) {
+      return convexUrl.replace(/\.cloud$/, ".site");
+    }
+
+    throw new Error(
+      "VITE_CONVEX_SITE_URL must be set for self-hosted or local Convex deployments",
+    );
+  })();
 
   // Add a toast message
   const addToast = useCallback(

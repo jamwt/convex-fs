@@ -31,8 +31,8 @@ $ npm run dev
 The `run dev` command will run both the vite frontend and the `npx convex dev`
 command in the background.
 
-As usual, `npx convex dev` will make sure you're logged in, help you set up a new Convex
-project, and deploy the project to a development environment.
+As usual, `npx convex dev` will make sure you're logged in, help you set up a
+new Convex project, and deploy the project to a development environment.
 
 ## Set the bunny.net environment variables.
 
@@ -40,20 +40,23 @@ Your app is running, but it doesn't work—yet! We need to introduce those
 variables and keys from [the bunny.net setup](/get-started/setup-bunny) into our
 Convex backend.
 
-If your Convex project dashboard isn't already loaded in your browser, you can pop it up at any
-time from the terminal in your project root by running:
+If your Convex project dashboard isn't already loaded in your browser, you can
+pop it up at any time from the terminal in your project root by running:
 
 ```bash
 $ npx convex dashboard
 ```
 
-Then, in the dashboard, click **Settings** in the left nav, and choose **Environment Variables**.
-Finally, set those four variables from the CDN setup using the management UI:
+Then, in the dashboard, click **Settings** in the left nav, and choose
+**Environment Variables**. Finally, set those four variables from the CDN setup
+using the management UI:
 
 ![dashboard env vars](./bunny-convex-dashboard.png)
 
-<Aside type="tip">Remember, if you're using a non-default (non-Frankfurt) storage zone
-region, you'll need to set `BUNNY_REGION` in the dashboard as well.</Aside>
+<Aside type="tip">
+  Remember, if you're using a non-default (non-Frankfurt) storage zone region,
+  you'll need to set `BUNNY_REGION` in the dashboard as well.
+</Aside>
 
 ## Try the app!
 
@@ -64,6 +67,14 @@ You can try renaming, copying, and deleting your image files.
 It should look a little like this:
 
 <VideoPlayer link="https://www.youtube.com/watch?v=LK6EONQjhP0" />
+
+<Aside type="note">
+  **Self-hosted or local Convex users:** The example app automatically derives
+  the HTTP Actions URL from your `VITE_CONVEX_URL` for Convex Cloud deployments.
+  If you're running a self-hosted or local Convex backend, you'll need to
+  explicitly set `VITE_CONVEX_SITE_URL` in your `.env.local` file to point to
+  your HTTP Actions endpoint.
+</Aside>
 
 ## What's next?
 
