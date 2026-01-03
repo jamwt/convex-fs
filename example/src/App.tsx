@@ -8,16 +8,39 @@ import {
   Copy,
   Trash2,
   X,
-  ImagePlus,
-  Image,
+  Upload,
   CheckCircle,
   AlertCircle,
   Bomb,
+  FileVideo,
+  FileAudio,
+  FileText,
+  FileCode,
+  File,
 } from "lucide-react";
 import "./App.css";
 
 // Path prefix for ConvexFS routes (must match http.ts)
 const FS_PREFIX = "/fs";
+
+// Helper to get the appropriate icon for a file type
+function getFileIcon(contentType: string) {
+  if (contentType.startsWith("video/")) return FileVideo;
+  if (contentType.startsWith("audio/")) return FileAudio;
+  if (contentType.startsWith("text/")) return FileText;
+  if (
+    contentType === "application/json" ||
+    contentType === "application/javascript" ||
+    contentType.includes("xml")
+  )
+    return FileCode;
+  return File;
+}
+
+// Check if a content type is an image
+function isImageType(contentType: string): boolean {
+  return contentType.startsWith("image/");
+}
 
 // Types
 type UploadingFile = {
@@ -114,7 +137,7 @@ function App() {
   const [isSettingExpiration, setIsSettingExpiration] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const commitImage = useMutation(api.files.commitImage);
+  const commitFile = useMutation(api.files.commitFile);
   const moveFile = useMutation(api.files.moveFile);
   const copyFile = useMutation(api.files.copyFile);
   const deleteFile = useMutation(api.files.deleteFile);
@@ -124,7 +147,7 @@ function App() {
     results: images,
     status,
     loadMore,
-  } = usePaginatedQuery(api.files.listImages, {}, { initialNumItems: 24 });
+  } = usePaginatedQuery(api.files.listFiles, {}, { initialNumItems: 24 });
 
   // Get site URL for uploads and image URLs
   const siteUrl = (() => {
@@ -282,16 +305,7 @@ function App() {
   // Handle file upload
   const uploadFiles = useCallback(
     async (files: FileList) => {
-      const validFiles: File[] = [];
-
-      // Validate files are images
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image/")) {
-          addToast(`"${file.name}" is not an image file`);
-        } else {
-          validFiles.push(file);
-        }
-      }
+      const validFiles = Array.from(files);
 
       if (validFiles.length === 0) return;
 
@@ -350,7 +364,7 @@ function App() {
             });
 
             // 2. Commit the image to the filesystem
-            await commitImage({
+            await commitFile({
               blobId,
               filename: file.name,
               contentType: file.type,
@@ -368,7 +382,7 @@ function App() {
         }),
       );
     },
-    [siteUrl, commitImage, addToast],
+    [siteUrl, commitFile, addToast],
   );
 
   // Drag handlers
@@ -416,7 +430,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1>Convex FS - Photo Gallery</h1>
+      <h1>Convex FS - File Gallery</h1>
 
       {/* Drop Zone */}
       <div
@@ -427,9 +441,9 @@ function App() {
         onClick={handleClick}
       >
         <div className="drop-zone-icon">
-          <ImagePlus size={48} strokeWidth={1.5} />
+          <Upload size={48} strokeWidth={1.5} />
         </div>
-        <p className="drop-zone-text">Drop images here or click to upload</p>
+        <p className="drop-zone-text">Drop files here or click to upload</p>
         <p className="drop-zone-subtext">Supports multiple files</p>
 
         {/* Upload Progress */}
@@ -450,21 +464,20 @@ function App() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
         multiple
         className="hidden-input"
         onChange={handleFileChange}
       />
 
-      {/* Photo Grid */}
+      {/* File Grid */}
       {status === "LoadingFirstPage" ? (
-        <div className="loading-state">Loading images...</div>
+        <div className="loading-state">Loading files...</div>
       ) : images.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">
-            <Image size={64} strokeWidth={1} />
+            <File size={64} strokeWidth={1} />
           </div>
-          <p className="empty-state-text">No images yet. Upload some!</p>
+          <p className="empty-state-text">No files yet. Upload some!</p>
         </div>
       ) : (
         <>
@@ -485,16 +498,38 @@ function App() {
                     className={`photo-grid-item ${isExpired ? "expired" : ""}`}
                   >
                     <div className="photo-grid-item-image-container">
-                      <img
-                        src={buildDownloadUrl(
-                          siteUrl,
-                          FS_PREFIX,
-                          image.blobId,
-                          image.path,
-                        )}
-                        alt={image.path}
-                        loading="lazy"
-                      />
+                      {isImageType(image.contentType) ? (
+                        <img
+                          src={buildDownloadUrl(
+                            siteUrl,
+                            FS_PREFIX,
+                            image.blobId,
+                            image.path,
+                          )}
+                          alt={image.path}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <a
+                          href={buildDownloadUrl(
+                            siteUrl,
+                            FS_PREFIX,
+                            image.blobId,
+                            image.path,
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="file-icon-link"
+                        >
+                          {(() => {
+                            const Icon = getFileIcon(image.contentType);
+                            return <Icon size={64} strokeWidth={1.5} />;
+                          })()}
+                          <span className="file-mime-type">
+                            {image.contentType}
+                          </span>
+                        </a>
+                      )}
                       {isExpired && (
                         <div className="expired-overlay">
                           <X size={64} strokeWidth={3} />

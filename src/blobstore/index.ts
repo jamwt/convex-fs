@@ -6,28 +6,18 @@ export type {
   DownloadUrlOptions,
   PutOptions,
   DeleteResult,
+  // Client-facing type aliases
+  BunnyStorageConfig,
+  TestStorageConfig,
+  StorageConfig,
 } from "./types.js";
-
-export { MAX_FILE_SIZE_BYTES } from "./types.js";
 
 export { createBunnyBlobStore } from "./bunny.js";
 export { createTestBlobStore } from "./test.js";
 
-import type {
-  BlobStore,
-  BunnyBlobStoreConfig,
-  TestBlobStoreConfig,
-} from "./types.js";
+import type { BlobStore, StorageConfig } from "./types.js";
 import { createBunnyBlobStore } from "./bunny.js";
 import { createTestBlobStore } from "./test.js";
-
-/**
- * Storage configuration type.
- * Supports Bunny.net Edge Storage and in-memory test storage.
- */
-export type StorageConfig =
-  | ({ type: "bunny" } & BunnyBlobStoreConfig)
-  | ({ type: "test" } & TestBlobStoreConfig);
 
 /**
  * Factory function that creates the appropriate BlobStore based on config type.

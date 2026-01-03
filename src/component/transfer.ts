@@ -1,11 +1,12 @@
 import { v } from "convex/values";
 import {
   action,
+  mutation,
   internalMutation,
   internalQuery,
 } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
-import { createBlobStore, MAX_FILE_SIZE_BYTES } from "./blobstore/index.js";
+import { createBlobStore } from "../blobstore/index.js";
 import { configValidator } from "./types.js";
 
 const DEFAULT_DOWNLOAD_URL_TTL = 3600; // 1 hour
@@ -30,49 +31,36 @@ export const createUpload = internalMutation({
 });
 
 /**
- * Upload a blob to storage via server-side proxy.
- * Called from HTTP action handler.
+ * Register a pending upload after the blob has been uploaded to storage.
+ * Called by the client after uploading directly to the blob store.
+ * This records the upload for GC tracking - uncommitted uploads will be
+ * cleaned up after the grace period expires.
  */
-export const uploadBlob = action({
+export const registerPendingUpload = mutation({
   args: {
     config: configValidator,
-    data: v.bytes(),
-    contentType: v.string(),
-  },
-  returns: v.object({
     blobId: v.string(),
-  }),
+    contentType: v.string(),
+    size: v.number(),
+  },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const { config, data, contentType } = args;
-
-    // Validate size (15MB limit to leave headroom under Convex 16MB return limit)
-    if (data.byteLength > MAX_FILE_SIZE_BYTES) {
-      throw new Error(
-        `File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
-      );
-    }
+    const { config, blobId, contentType, size } = args;
 
     // Store config for background GC (components can't access env vars)
     await ctx.runMutation(internal.config.ensureConfigStored, { config });
 
-    // Generate blobId
-    const blobId = crypto.randomUUID();
-
-    // Create blob store and upload
-    const store = createBlobStore(config.storage);
-    await store.put(blobId, new Uint8Array(data), { contentType });
-
-    // Record the pending upload with metadata (we know size/contentType since we proxied)
+    // Record the pending upload with metadata
     const ttl = DEFAULT_UPLOAD_COMMIT_TTL;
     const expiresAt = Date.now() + ttl * 1000;
-    await ctx.runMutation(internal.transfer.createUpload, {
+    await ctx.db.insert("uploads", {
       blobId,
       expiresAt,
       contentType,
-      size: data.byteLength,
+      size,
     });
 
-    return { blobId };
+    return null;
   },
 });
 

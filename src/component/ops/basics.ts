@@ -1,18 +1,18 @@
 /**
  * Basic filesystem operations for ConvexFS.
  *
- * This module contains the fundamental file operations:
+ * This module contains the fundamental file operations (CONTROL PLANE ONLY):
  * - stat: Get file metadata
  * - list: List files with pagination
  * - copyByPath, moveByPath, deleteByPath: Convenience wrappers
- * - getBlob, getFile: Download blob/file data
- * - writeFile: Write data directly to a file
  * - restore, clearAllFiles: Internal utilities
+ *
+ * Note: Blob I/O (getBlob, getFile, writeFile) has been moved to the client
+ * to support large files by running in the caller's execution context.
  */
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import {
-  action,
   internalAction,
   internalMutation,
   mutation,
@@ -23,7 +23,6 @@ import { api, internal } from "../_generated/api.js";
 import { configValidator, fileMetadataValidator } from "../types.js";
 import { paginator } from "convex-helpers/server/pagination";
 import schema from "../schema.js";
-import { createBlobStore } from "../blobstore/index.js";
 
 export const stat = query({
   args: {
@@ -247,160 +246,6 @@ export const deleteByPath = mutation({
       config: args.config,
       ops: [{ op: "delete", source }],
     });
-    return null;
-  },
-});
-
-// ============================================================================
-// Blob/File Download
-// ============================================================================
-
-/**
- * Get a blob's raw data by blobId.
- *
- * This downloads the blob from storage and returns it as an ArrayBuffer.
- * Returns null if the blob doesn't exist.
- *
- * @example
- * const data = await ctx.runAction(api.ops.basics.getBlob, {
- *   config,
- *   blobId: "abc123",
- * });
- * if (data) {
- *   // Process the ArrayBuffer...
- * }
- */
-export const getBlob = action({
-  args: {
-    config: configValidator,
-    blobId: v.string(),
-  },
-  returns: v.union(v.null(), v.bytes()),
-  handler: async (_ctx, args) => {
-    const { config, blobId } = args;
-
-    const store = createBlobStore(config.storage);
-    const blob = await store.get(blobId);
-
-    if (!blob) {
-      return null;
-    }
-
-    return await blob.arrayBuffer();
-  },
-});
-
-/**
- * Get a file's contents and metadata by path.
- *
- * This looks up the file by path, downloads the blob from storage,
- * and returns both the data and metadata.
- * Returns null if the file doesn't exist.
- *
- * @example
- * const result = await ctx.runAction(api.ops.basics.getFile, {
- *   config,
- *   path: "/images/photo.jpg",
- * });
- * if (result) {
- *   console.log(result.contentType); // "image/jpeg"
- *   console.log(result.size); // 12345
- *   // result.data is an ArrayBuffer
- * }
- */
-export const getFile = action({
-  args: {
-    config: configValidator,
-    path: v.string(),
-  },
-  returns: v.union(
-    v.null(),
-    v.object({
-      data: v.bytes(),
-      contentType: v.string(),
-      size: v.number(),
-    }),
-  ),
-  handler: async (
-    ctx,
-    args,
-  ): Promise<{
-    data: ArrayBuffer;
-    contentType: string;
-    size: number;
-  } | null> => {
-    const { config, path } = args;
-
-    // Look up file by path to get blobId and metadata
-    const file: {
-      path: string;
-      blobId: string;
-      contentType: string;
-      size: number;
-    } | null = await ctx.runQuery(api.ops.basics.stat, { config, path });
-    if (!file) {
-      return null;
-    }
-
-    // Get blob from storage
-    const store = createBlobStore(config.storage);
-    const blob = await store.get(file.blobId);
-    if (!blob) {
-      // File record exists but blob is missing from storage
-      // This shouldn't happen in normal operation
-      return null;
-    }
-
-    return {
-      data: await blob.arrayBuffer(),
-      contentType: file.contentType,
-      size: file.size,
-    };
-  },
-});
-
-/**
- * Write data directly to a file path.
- *
- * This is a convenience wrapper that uploads the blob to storage and
- * commits it to the given path in one call. Overwrites if the file
- * already exists.
- *
- * @example
- * // Process an image and save the result
- * const result = await ctx.runAction(api.ops.basics.getFile, { config, path: "/input.jpg" });
- * const processed = await processImage(result.data); // your processing logic
- * await ctx.runAction(api.ops.basics.writeFile, {
- *   config,
- *   path: "/output.webp",
- *   data: processed,
- *   contentType: "image/webp",
- * });
- */
-export const writeFile = action({
-  args: {
-    config: configValidator,
-    path: v.string(),
-    data: v.bytes(),
-    contentType: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const { config, path, data, contentType } = args;
-
-    // Upload blob to storage
-    const { blobId } = await ctx.runAction(api.transfer.uploadBlob, {
-      config,
-      data,
-      contentType,
-    });
-
-    // Commit to path (overwrites if exists)
-    await ctx.runMutation(api.ops.transact.commitFiles, {
-      config,
-      files: [{ path, blobId }],
-    });
-
     return null;
   },
 });

@@ -66,6 +66,8 @@ export interface DownloadUrlOptions {
 export interface PutOptions {
   /** Content-Type of the blob. */
   contentType?: string;
+  /** Content-Length hint (useful for streaming uploads when size is known). */
+  contentLength?: number;
 }
 
 /**
@@ -77,8 +79,31 @@ export interface PutOptions {
  */
 export type DeleteResult = { status: "deleted" } | { status: "not_found" };
 
-/** Maximum file size in bytes (15MB). */
-export const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+// =============================================================================
+// Client-facing type aliases
+// =============================================================================
+
+/**
+ * Bunny.net Edge Storage configuration.
+ * Alias for BunnyBlobStoreConfig for use in client APIs.
+ */
+export type BunnyStorageConfig = BunnyBlobStoreConfig & { type: "bunny" };
+
+/**
+ * In-memory test storage configuration.
+ * Alias for TestBlobStoreConfig for use in client APIs.
+ */
+export type TestStorageConfig = TestBlobStoreConfig & { type: "test" };
+
+/**
+ * Storage configuration discriminated union.
+ * Used by ConvexFS client to configure the storage backend.
+ */
+export type StorageConfig = BunnyStorageConfig | TestStorageConfig;
+
+// =============================================================================
+// BlobStore Interface
+// =============================================================================
 
 /**
  * Interface for a blob store that supports basic CRUD operations
@@ -99,9 +124,14 @@ export interface BlobStore {
 
   /**
    * Upload a blob directly from the server.
-   * Maximum file size is 15MB.
+   * Accepts buffered data (Blob, Uint8Array) or a ReadableStream for streaming uploads.
+   * Streaming uploads allow large files to be uploaded in constant memory.
    */
-  put(key: string, data: Blob | Uint8Array, opts?: PutOptions): Promise<void>;
+  put(
+    key: string,
+    data: Blob | Uint8Array | ReadableStream<Uint8Array>,
+    opts?: PutOptions,
+  ): Promise<void>;
 
   /**
    * Download a blob from storage.

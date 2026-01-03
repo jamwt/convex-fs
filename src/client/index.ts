@@ -45,6 +45,7 @@ import type {
   HttpRouter,
 } from "./types.js";
 import type { FileMetadata } from "../component/types.js";
+import { createBlobStore } from "../blobstore/index.js";
 
 // Re-export types for consumers
 export type { Config, FileMetadata, Op, Dest } from "../component/types.js";
@@ -171,7 +172,8 @@ export class ConvexFS {
   /**
    * Get a blob's raw data by blobId.
    *
-   * This downloads the blob from storage and returns it as an ArrayBuffer.
+   * This fetches the download URL from the component, then downloads
+   * the blob directly from storage in the caller's execution context.
    * Returns null if the blob doesn't exist.
    *
    * @param blobId - The blob identifier
@@ -187,18 +189,28 @@ export class ConvexFS {
    * ```
    */
   async getBlob(ctx: ActionCtx, blobId: string): Promise<ArrayBuffer | null> {
-    return await ctx.runAction(this.component.lib.getBlob, {
-      config: this.config,
-      blobId,
-    });
+    // Get signed download URL from component (control plane)
+    const url = await this.getDownloadUrl(ctx, blobId);
+
+    // Fetch the blob directly in the caller's context (data plane)
+    const response = await fetch(url);
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch blob: ${response.status} ${response.statusText}`,
+      );
+    }
+    return response.arrayBuffer();
   }
 
   /**
    * Get a file's contents and metadata by path.
    *
-   * This looks up the file by path, downloads the blob from storage,
-   * and returns both the data and metadata.
-   * Returns null if the file doesn't exist.
+   * This looks up the file metadata, fetches the download URL,
+   * then downloads the blob directly from storage in the caller's
+   * execution context. Returns null if the file doesn't exist.
    *
    * @param path - The file path
    * @returns Object with data, contentType, and size, or null if not found
@@ -217,16 +229,30 @@ export class ConvexFS {
     ctx: ActionCtx,
     path: string,
   ): Promise<{ data: ArrayBuffer; contentType: string; size: number } | null> {
-    return await ctx.runAction(this.component.lib.getFile, {
-      config: this.config,
-      path,
-    });
+    // Get file metadata (control plane)
+    const file = await this.stat(ctx, path);
+    if (!file) {
+      return null;
+    }
+
+    // Get signed download URL and fetch blob (data plane in caller's context)
+    const data = await this.getBlob(ctx, file.blobId);
+    if (!data) {
+      return null;
+    }
+
+    return {
+      data,
+      contentType: file.contentType,
+      size: file.size,
+    };
   }
 
   /**
    * Write raw bytes to blob storage.
    *
-   * This uploads data to blob storage and creates a pending upload record.
+   * This uploads data directly to the blob store in the caller's execution
+   * context, then registers the pending upload with the component.
    * The returned blobId can be committed to a file path using `commitFiles()`.
    *
    * @param data - The raw bytes to upload
@@ -247,19 +273,32 @@ export class ConvexFS {
     data: ArrayBuffer,
     contentType: string,
   ): Promise<string> {
-    const result = await ctx.runAction(this.component.lib.uploadBlob, {
+    const storage = this.options.storage;
+
+    // Generate blobId locally
+    const blobId = crypto.randomUUID();
+
+    // Upload directly to blob store (data plane in caller's context)
+    const store = createBlobStore(storage);
+    await store.put(blobId, new Uint8Array(data), { contentType });
+
+    // Register pending upload with component (control plane)
+    await ctx.runMutation(this.component.lib.registerPendingUpload, {
       config: this.config,
-      data,
+      blobId,
       contentType,
+      size: data.byteLength,
     });
-    return result.blobId;
+
+    return blobId;
   }
 
   /**
    * Write data directly to a file path.
    *
-   * This is a convenience method that uploads the blob and commits it
-   * to the given path in one call. Overwrites if the file already exists.
+   * This is a convenience method that uploads the blob directly to storage
+   * and commits it to the given path in one call. Overwrites if the file
+   * already exists.
    *
    * @param path - The file path to write to
    * @param data - The raw bytes to write
@@ -279,12 +318,11 @@ export class ConvexFS {
     data: ArrayBuffer,
     contentType: string,
   ): Promise<void> {
-    await ctx.runAction(this.component.lib.writeFile, {
-      config: this.config,
-      path,
-      data,
-      contentType,
-    });
+    // Upload blob directly (data plane in caller's context)
+    const blobId = await this.writeBlob(ctx, data, contentType);
+
+    // Commit to path (control plane)
+    await this.commitFiles(ctx, [{ path, blobId }]);
   }
 
   // ============================================================================
@@ -632,7 +670,7 @@ export function registerRoutes(
     allowedHeaders: ["Content-Type", "Content-Length"],
   });
 
-  // Route: POST /fs/upload -> Upload proxy
+  // Route: POST /fs/upload -> Stream directly to Bunny storage
   cors.route({
     path: pathPrefix + "/upload",
     method: "POST",
@@ -653,6 +691,8 @@ export function registerRoutes(
         });
       }
 
+      const storage = fs.config.storage;
+
       const contentType =
         req.headers.get("Content-Type") ?? "application/octet-stream";
       const contentLengthHeader = req.headers.get("Content-Length");
@@ -660,29 +700,26 @@ export function registerRoutes(
         ? parseInt(contentLengthHeader, 10)
         : 0;
 
-      // Check size limit (15MB to leave headroom under Convex 16MB return limit)
-      const MAX_UPLOAD_SIZE = 15 * 1024 * 1024;
-      if (contentLength > MAX_UPLOAD_SIZE) {
-        return new Response(
-          JSON.stringify({ error: "File too large. Maximum size is 15MB." }),
-          {
-            status: 413,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      // Generate blobId locally
+      const blobId = crypto.randomUUID();
 
       try {
-        const data = await req.arrayBuffer();
-
-        // Call the upload action with config (stores config for GC)
-        const result = await ctx.runAction(component.lib.uploadBlob, {
-          config: fs.config,
-          data,
+        // Stream the request body directly to storage (data plane)
+        const store = createBlobStore(storage);
+        await store.put(blobId, req.body!, {
           contentType,
+          contentLength: contentLength > 0 ? contentLength : undefined,
         });
 
-        return new Response(JSON.stringify(result), {
+        // Register pending upload with component (control plane)
+        await ctx.runMutation(component.lib.registerPendingUpload, {
+          config: fs.config,
+          blobId,
+          contentType,
+          size: contentLength,
+        });
+
+        return new Response(JSON.stringify({ blobId }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });

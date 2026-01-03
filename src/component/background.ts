@@ -12,7 +12,7 @@ import {
   internalQuery,
 } from "./_generated/server.js";
 import { internal } from "./_generated/api.js";
-import { createBlobStore } from "./blobstore/index.js";
+import { createBlobStore } from "../blobstore/index.js";
 import { deleteFileAndDecrefBlob } from "./ops/helpers.js";
 
 // =============================================================================

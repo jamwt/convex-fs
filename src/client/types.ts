@@ -52,45 +52,21 @@ export type DownloadAuthCallback = (
 ) => Promise<boolean>;
 
 // =============================================================================
-// Storage Configuration Types
+// Storage Configuration Types (re-exported from blobstore)
 // =============================================================================
 
-/**
- * Bunny.net Edge Storage configuration.
- */
-export interface BunnyStorageConfig {
-  type: "bunny";
-  /** Bunny.net Edge Storage API key */
-  apiKey: string;
-  /** Name of the storage zone */
-  storageZoneName: string;
-  /** Region for the storage zone endpoint */
-  region?: string;
-  /** CDN hostname for downloads, e.g., "myzone.b-cdn.net" or custom domain */
-  cdnHostname: string;
-  /** Token authentication key for signed CDN URLs */
-  tokenKey?: string;
-}
-
-/**
- * In-memory test storage configuration.
- *
- * NOT for production use - blobs are stored in-memory and don't persist
- * across Convex function invocations. This is only useful in convex-test.
- */
-export interface TestStorageConfig {
-  type: "test";
-}
-
-/**
- * Storage configuration.
- * Supports Bunny.net Edge Storage and in-memory test storage.
- */
-export type StorageConfig = BunnyStorageConfig | TestStorageConfig;
+export type {
+  BunnyStorageConfig,
+  TestStorageConfig,
+  StorageConfig,
+} from "../blobstore/index.js";
 
 // =============================================================================
 // ConvexFS Options
 // =============================================================================
+
+// Import for use in ConvexFSOptions
+import type { StorageConfig } from "../blobstore/index.js";
 
 /**
  * Options for ConvexFS constructor.

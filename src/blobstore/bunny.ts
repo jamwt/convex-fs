@@ -1,11 +1,10 @@
-import {
-  MAX_FILE_SIZE_BYTES,
-  type BlobStore,
-  type DeleteResult,
-  type BunnyBlobStoreConfig,
-  type UploadUrlOptions,
-  type DownloadUrlOptions,
-  type PutOptions,
+import type {
+  BlobStore,
+  DeleteResult,
+  BunnyBlobStoreConfig,
+  UploadUrlOptions,
+  DownloadUrlOptions,
+  PutOptions,
 } from "./types.js";
 
 const DEFAULT_TOKEN_TTL = 3600; // 1 hour
@@ -103,34 +102,44 @@ export function createBunnyBlobStore(config: BunnyBlobStoreConfig): BlobStore {
 
     async put(
       key: string,
-      data: Blob | Uint8Array,
+      data: Blob | Uint8Array | ReadableStream<Uint8Array>,
       opts?: PutOptions,
     ): Promise<void> {
-      // Check file size limit
-      const size = data instanceof Blob ? data.size : data.byteLength;
-      if (size > MAX_FILE_SIZE_BYTES) {
-        throw new Error(
-          `File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
-        );
-      }
-
       const url = buildStorageUrl(key);
       const contentType = opts?.contentType ?? "application/octet-stream";
 
-      // Convert Uint8Array to Blob for fetch body compatibility
-      const body =
-        data instanceof Uint8Array
-          ? new Blob([new Uint8Array(data).buffer as ArrayBuffer])
-          : data;
+      const headers: Record<string, string> = {
+        AccessKey: apiKey,
+        "Content-Type": contentType,
+      };
 
-      const response = await fetch(url, {
+      // Include Content-Length if known (helps Bunny allocate resources)
+      if (opts?.contentLength !== undefined) {
+        headers["Content-Length"] = String(opts.contentLength);
+      }
+
+      // Determine body and fetch options based on data type
+      let body: Blob | ReadableStream<Uint8Array>;
+      const fetchOptions: RequestInit = {
         method: "PUT",
-        headers: {
-          AccessKey: apiKey,
-          "Content-Type": contentType,
-        },
-        body,
-      });
+        headers,
+      };
+
+      if (data instanceof ReadableStream) {
+        // Streaming upload - requires duplex: "half"
+        body = data;
+        // @ts-expect-error - duplex is required for streaming request bodies
+        fetchOptions.duplex = "half";
+      } else if (data instanceof Uint8Array) {
+        // Convert Uint8Array to Blob for fetch body compatibility
+        body = new Blob([new Uint8Array(data).buffer as ArrayBuffer]);
+      } else {
+        body = data;
+      }
+
+      fetchOptions.body = body;
+
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");

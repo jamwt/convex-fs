@@ -4,10 +4,9 @@ import { paginationOptsValidator } from "convex/server";
 import { fs } from "./fs";
 
 /**
- * Commit an uploaded image to the filesystem.
- * Validates that the content type is an image.
+ * Commit an uploaded file to the filesystem.
  */
-export const commitImage = mutation({
+export const commitFile = mutation({
   args: {
     blobId: v.string(),
     filename: v.string(),
@@ -17,12 +16,6 @@ export const commitImage = mutation({
     path: v.string(),
   }),
   handler: async (ctx, args) => {
-    if (!args.contentType.startsWith("image/")) {
-      throw new Error(
-        `Invalid content type: "${args.contentType}". Only images are allowed.`,
-      );
-    }
-
     // Use filename directly as path (flat directory structure)
     const path = args.filename;
     await fs.commitFiles(ctx, [{ path, blobId: args.blobId }]);
@@ -31,10 +24,10 @@ export const commitImage = mutation({
 });
 
 /**
- * List images with pagination.
+ * List files with pagination.
  * Compatible with usePaginatedQuery from convex-fs/react.
  */
-export const listImages = query({
+export const listFiles = query({
   args: {
     paginationOpts: paginationOptsValidator,
   },
