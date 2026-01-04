@@ -36,6 +36,11 @@ CDN.
   recover from accidental deletions
 - **Flexible authentication** — Bring your own auth logic for uploads and
   downloads
+- **File expiration** — Set automatic expiration times on files for temporary
+  uploads, time-limited sharing, or session-scoped content
+- **Custom CDN parameters** — Pass parameters to Bunny.net edge rules for
+  on-the-fly transformations like custom download filenames and image
+  optimization
 
 ## Example app
 
