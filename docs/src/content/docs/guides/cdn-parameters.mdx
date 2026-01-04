@@ -14,12 +14,14 @@ and more.
 
 ## How it works
 
-When you build a download URL with extra parameters:
+When you build a download URL with extra parameters using `buildDownloadUrl`:
 
-1. The parameters are appended to the CDN URL as query strings
-2. If token authentication is enabled, the parameters are included in the
+1. The parameters are JSON-encoded into a single `cdn-params` query parameter
+2. When ConvexFS processes the download request, it decodes these parameters and
+   appends them to the CDN URL
+3. If token authentication is enabled, the parameters are included in the
    cryptographic signature—users cannot tamper with them
-3. Bunny.net's Edge Rules can inspect these parameters and modify the response
+4. Bunny.net's Edge Rules can inspect these parameters and modify the response
 
 The `downloadAuth` callback also receives these parameters, allowing you to make
 authorization decisions based on them.

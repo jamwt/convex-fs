@@ -774,19 +774,24 @@ export function registerRoutes(
         }
       }
 
-      // Extract extra params to pass through to CDN (excluding ones we handle)
+      // Extract CDN params from the cdn-params query parameter (JSON-encoded)
       const requestUrl = new URL(req.url);
-      const extraParams: Record<string, string> = {};
-      const handledParams = new Set(["path"]);
+      const cdnParamsJson = requestUrl.searchParams.get("cdn-params");
+      let extraParams: Record<string, string> | undefined;
 
-      for (const [key, value] of requestUrl.searchParams) {
-        if (!handledParams.has(key)) {
-          extraParams[key] = value;
+      if (cdnParamsJson) {
+        try {
+          extraParams = JSON.parse(cdnParamsJson);
+        } catch {
+          return new Response(
+            JSON.stringify({ error: "Invalid cdn-params JSON" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       }
-
-      const extraParamsOrUndefined =
-        Object.keys(extraParams).length > 0 ? extraParams : undefined;
 
       // Auth check for download
       try {
@@ -794,7 +799,7 @@ export function registerRoutes(
           ctx,
           blobId,
           path,
-          extraParamsOrUndefined,
+          extraParams,
         );
         if (!allowed) {
           return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -813,7 +818,7 @@ export function registerRoutes(
       try {
         // Get download URL with extra params included (and signed if token auth)
         const downloadUrl = await fs.getDownloadUrl(ctx, blobId, {
-          extraParams: extraParamsOrUndefined,
+          extraParams,
         });
 
         // Cache for token TTL minus buffer
@@ -847,7 +852,7 @@ export function registerRoutes(
  * @param prefix - The path prefix
  * @param blobId - The ID of the blob
  * @param path - The path of the file being downloaded
- * @param params - Additional query parameters to pass through to the CDN
+ * @param params - Additional query parameters to pass through to the CDN (JSON-encoded in cdn-params)
  * @returns The download URL
  */
 export function buildDownloadUrl(
@@ -861,10 +866,8 @@ export function buildDownloadUrl(
   if (path !== undefined) {
     url.searchParams.set("path", path);
   }
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
-    }
+  if (params && Object.keys(params).length > 0) {
+    url.searchParams.set("cdn-params", JSON.stringify(params));
   }
   return url.toString();
 }
