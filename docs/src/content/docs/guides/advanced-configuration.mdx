@@ -125,10 +125,22 @@ Authentication callback for downloads. Called before redirecting to a signed CDN
 URL.
 
 ```typescript
-downloadAuth: async (ctx: HttpActionCtx, blobId: string) => Promise<boolean>;
+downloadAuth: async (
+  ctx: HttpActionCtx,
+  blobId: string,
+  path?: string,
+  extraParams?: Record<string, string>,
+) => Promise<boolean>;
 ```
 
-Return `true` to allow the download, `false` to reject with a 401 response.
+| Parameter     | Type                                  | Description                                                                                |
+| ------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `ctx`         | `HttpActionCtx`                       | The HTTP action context                                                                    |
+| `blobId`      | `string`                              | The blob ID being requested                                                                |
+| `path`        | `string \| undefined`                 | The file path, if provided in the download URL                                             |
+| `extraParams` | `Record<string, string> \| undefined` | Any extra query parameters from the request (see [CDN parameters](/guides/cdn-parameters)) |
+
+Return `true` to allow the download, `false` to reject with a 403 response.
 
 See [Authn & Authz](/guides/authn-authz#download-authentication) for details.
 

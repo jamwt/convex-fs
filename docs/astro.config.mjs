@@ -39,6 +39,7 @@ export default defineConfig({
             { label: "Installing & configuring", slug: "guides/app-setup" },
             { label: "Uploading files", slug: "guides/uploading-files" },
             { label: "Serving files", slug: "guides/serving-files" },
+            { label: "CDN parameters", slug: "guides/cdn-parameters" },
             {
               label: "Filesystem operations",
               slug: "guides/filesystem-operations",

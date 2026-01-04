@@ -116,10 +116,14 @@ URL. The callback receives the context, the `blobId` being requested, and
 optionally the file `path` (if the client included it in the download URL).
 
 ```typescript
-downloadAuth: async (ctx, blobId, path?) => {
+downloadAuth: async (ctx, blobId, path?, extraParams?) => {
   // Return true to allow, false to deny
 };
 ```
+
+The `extraParams` argument contains any additional query parameters from the
+download URL request (see [CDN parameters](/guides/cdn-parameters) for details
+on passing custom parameters to the CDN).
 
 Whether you need download authentication depends on your use case:
 
@@ -140,7 +144,7 @@ directly on the path without needing a separate blobId-to-path lookup:
 registerRoutes(http, components.fs, fs, {
   pathPrefix: "/fs",
   // ...
-  downloadAuth: async (ctx, blobId, path) => {
+  downloadAuth: async (ctx, blobId, path, extraParams) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return false;
@@ -174,7 +178,7 @@ look up which file(s) reference the blobId and check permissions accordingly:
 registerRoutes(http, components.fs, fs, {
   pathPrefix: "/fs",
   // ...
-  downloadAuth: async (ctx, blobId, path) => {
+  downloadAuth: async (ctx, blobId, path, extraParams) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return false;
