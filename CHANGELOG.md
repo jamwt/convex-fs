@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Move data plane out of component to allow large uploads/downloads
+- Support passing extra params through to bunny's CDN for edge rules that custom
+  filenames, image optimization, custom cache rules, etc.
+
 ## 0.1.7
 
 File expiration.
