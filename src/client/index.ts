@@ -672,7 +672,7 @@ export function registerRoutes(
   // Create CORS-enabled router for cross-origin requests
   const cors = corsRouter(http, {
     allowedOrigins: ["*"],
-    allowedHeaders: ["Content-Type", "Content-Length"],
+    allowedHeaders: ["Content-Type", "Content-Length", "Authorization"],
   });
 
   // Route: POST /fs/upload -> Stream directly to Bunny storage
