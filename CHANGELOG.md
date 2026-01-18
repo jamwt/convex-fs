@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+Bugfix -- add "Authorization" to CORS headers so auth works on the HTTP routes.
+
 ## 0.2.0
 
 - Move data plane out of component to allow large uploads/downloads
